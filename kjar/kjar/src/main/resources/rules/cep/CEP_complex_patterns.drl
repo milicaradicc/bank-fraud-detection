@@ -1,0 +1,231 @@
+package rules.cep;
+
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.events.LoginEvent;
+import com.ftn.sbnz.model.events.SuspiciousLogin;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.ConfigList;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.enums.FlagType;
+import com.ftn.sbnz.model.GeoUtil;
+
+import java.util.Date;
+import java.util.List;
+
+// CEP 1: Velocity attack (card testing)
+// 5+ transakcija u 60 sekundi za isti klijent
+rule "CEP: Velocity attack - card testing"
+    salience 120
+    when
+        $tx: Transaction($clientId: clientId, $time: timestamp)
+        Number(intValue >= 5) from accumulate(
+            $t: Transaction(clientId == $clientId)
+                over window:time(60s),
+            count($t)
+        )
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.VELOCITY_ATTACK,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 60000)
+        )
+    then
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.VELOCITY_ATTACK, $time);
+        flag.setDescription("5+ transakcija u 60 sekundi - card testing pattern");
+        insert(flag);
+        System.out.println("[CEP] " + flag);
+end
+
+// CEP 2: Impossible travel izmedju transakcija
+rule "CEP: Impossible travel izmedju transakcija"
+    salience 120
+    when
+        $tx2: Transaction(
+            $clientId: clientId,
+            $lat2: latitude != 0.0,
+            $lon2: longitude != 0.0,
+            $time2: timestamp,
+            $txId2: transactionId
+        )
+        $tx1: Transaction(
+            clientId == $clientId,
+            this != $tx2,
+            $lat1: latitude != 0.0,
+            $lon1: longitude != 0.0,
+            $time1: timestamp,
+            this before[0s, 6h] $tx2
+        )
+        eval(GeoUtil.isImpossibleTravel($lat1, $lon1, $lat2, $lon2,
+                                        $time2.getTime() - $time1.getTime()))
+        not Flag(transactionId == $txId2, type == FlagType.NEMOGUCE_PUTOVANJE)
+    then
+        Flag flag = new Flag($clientId, $txId2, FlagType.NEMOGUCE_PUTOVANJE, $time2);
+        double dist = GeoUtil.distanceKm($lat1, $lon1, $lat2, $lon2);
+        flag.setDescription("Impossible travel: " + String.format("%.0f", dist)
+            + "km za " + ((($time2.getTime() - $time1.getTime()) / 60000)) + " min");
+        insert(flag);
+        System.out.println("[CEP] " + flag);
+end
+
+// CEP 3: Structuring (smurfing)
+// 3+ transakcija u 48h sa iznosima u opsegu [85%, 100%) AML praga
+rule "CEP: Structuring (smurfing) - vise transakcija ispod AML praga"
+    salience 120
+    when
+        $config: ConfigList($threshold: amlReportingThreshold)
+        $tx: Transaction($clientId: clientId, $time: timestamp)
+        $count: Number(intValue >= 3) from accumulate(
+            $t: Transaction(
+                clientId == $clientId,
+                amount >= ($threshold * 0.85),
+                amount < $threshold
+            ) over window:time(48h),
+            count($t)
+        )
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.STRUCTURING,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 3600000)
+        )
+    then
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.STRUCTURING, $time);
+        flag.setDescription("Structuring pattern: " + $count
+            + " transakcija ispod AML praga (" + $threshold + ") u 48h");
+        insert(flag);
+        System.out.println("[CEP] " + flag);
+end
+
+// CEP 4: Burst pattern nakon mirovanja
+rule "CEP: Burst nakon perioda mirovanja"
+    salience 120
+    when
+        $client: Client(
+            $clientId: clientId,
+            daysInactiveBeforeReactivation >= 90
+        )
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        Number(intValue >= 3) from accumulate(
+            $t: Transaction(
+                clientId == $clientId,
+                recipientId != null
+            ) over window:time(24h),
+            count($t)
+        )
+        not Flag(clientId == $clientId, type == FlagType.BURST_NAKON_MIROVANJA)
+    then
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.BURST_NAKON_MIROVANJA, $time);
+        flag.setDescription("3+ transakcija za 24h posle "
+            + $client.getDaysInactiveBeforeReactivation() + " dana mirovanja");
+        insert(flag);
+        System.out.println("[CEP] " + flag);
+end
+
+// CEP 5: Failed login burst - brute force
+rule "CEP: Failed login burst - brute force"
+    salience 120
+    when
+        $login: LoginEvent($clientId: clientId, successful == false, $time: timestamp)
+        Number(intValue >= 5) from accumulate(
+            $l: LoginEvent(
+                clientId == $clientId,
+                successful == false
+            ) over window:time(5m),
+            count($l)
+        )
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.BRUTE_FORCE_POKUSAJ,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 300000)
+        )
+    then
+        Flag flag = new Flag($clientId, FlagType.BRUTE_FORCE_POKUSAJ, $time);
+        flag.setDescription("5+ neuspesnih prijava u 5 minuta");
+        insert(flag);
+        System.out.println("[CEP] " + flag);
+end
+
+// CEP 6: Suspicious login pattern
+// Failed login burst -> successful login sa novog uređaja
+rule "CEP: Failed burst pracen uspesnom prijavom sa novog uredjaja"
+    salience 130
+    when
+        $success: LoginEvent(
+            $clientId: clientId,
+            successful == true,
+            knownDevice == false,
+            $time: timestamp,
+            $country: country,
+            $deviceId: deviceId
+        )
+        Number(intValue >= 5) from accumulate(
+            $f: LoginEvent(
+                clientId == $clientId,
+                successful == false,
+                this before[0s, 10m] $success
+            ),
+            count($f)
+        )
+        not SuspiciousLogin(
+            clientId == $clientId,
+            $susTs: timestamp,
+            eval(Math.abs($susTs.getTime() - $time.getTime()) < 60000)
+        )
+    then
+        SuspiciousLogin susp = new SuspiciousLogin($clientId, $time,
+            "Failed burst pracen uspesnom prijavom sa novog uredjaja");
+        susp.setCountry($country);
+        susp.setDeviceId($deviceId);
+        susp.setNewDevice(true);
+        insert(susp);
+
+        Flag flag = new Flag($clientId, FlagType.SUSPICIOUS_LOGIN, $time);
+        flag.setDescription("Uspesna prijava sa novog uredjaja iz " + $country
+            + " posle failed burst-a");
+        insert(flag);
+        System.out.println("[CEP] " + susp);
+end
+
+// CEP 7: Impossible travel izmedju logina
+rule "CEP: Impossible travel izmedju logina"
+    salience 120
+    when
+        $l2: LoginEvent(
+            $clientId: clientId,
+            successful == true,
+            $lat2: latitude != 0.0,
+            $lon2: longitude != 0.0,
+            $time2: timestamp
+        )
+        $l1: LoginEvent(
+            clientId == $clientId,
+            successful == true,
+            this != $l2,
+            $lat1: latitude != 0.0,
+            $lon1: longitude != 0.0,
+            $time1: timestamp,
+            this before[0s, 6h] $l2
+        )
+        eval(GeoUtil.isImpossibleTravel($lat1, $lon1, $lat2, $lon2,
+                                        $time2.getTime() - $time1.getTime()))
+        not SuspiciousLogin(
+            clientId == $clientId,
+            $susTs: timestamp,
+            eval(Math.abs($susTs.getTime() - $time2.getTime()) < 60000)
+        )
+    then
+        SuspiciousLogin susp = new SuspiciousLogin($clientId, $time2,
+            "Impossible travel izmedju logina");
+        susp.setNewCountry(true);
+        insert(susp);
+
+        Flag flag = new Flag($clientId, FlagType.NEMOGUCE_PUTOVANJE, $time2);
+        double dist = GeoUtil.distanceKm($lat1, $lon1, $lat2, $lon2);
+        flag.setDescription("Impossible travel u login-u: " + String.format("%.0f", dist) + "km");
+        insert(flag);
+        System.out.println("[CEP] " + susp);
+end

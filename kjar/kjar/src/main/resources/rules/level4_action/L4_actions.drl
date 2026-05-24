@@ -1,0 +1,174 @@
+package rules.level4_action;
+
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.facts.RiskScore;
+import com.ftn.sbnz.model.facts.Alert;
+import com.ftn.sbnz.model.enums.ActionType;
+import com.ftn.sbnz.model.enums.RiskLevel;
+import com.ftn.sbnz.model.enums.FlagType;
+
+import java.util.Date;
+
+rule "L4: Nizak rizik - log only"
+    salience 20
+    when
+        $rs: RiskScore(
+            $clientId: clientId,
+            $txId: transactionId,
+            level == RiskLevel.LOW
+        )
+        not Alert(clientId == $clientId, transactionId == $txId)
+    then
+        Alert alert = new Alert(
+            $clientId, $txId, ActionType.LOG_ONLY,
+            $rs.getLevel(), $rs.getScore(), new Date(),
+            "Transakcija prolazi normalno. Skor: " + String.format("%.1f", $rs.getScore())
+        );
+        insert(alert);
+        System.out.println("[L4] " + alert);
+end
+
+rule "L4: Srednji rizik - alert i watchlist"
+    salience 20
+    when
+        $rs: RiskScore(
+            $clientId: clientId,
+            $txId: transactionId,
+            level == RiskLevel.MEDIUM
+        )
+        $client: Client(clientId == $clientId)
+        not Alert(clientId == $clientId, transactionId == $txId)
+    then
+        Alert alert = new Alert(
+            $clientId, $txId, ActionType.ALERT_ANALYST,
+            $rs.getLevel(), $rs.getScore(), new Date(),
+            "Transakcija prolazi uz alert. Klijent na watchlist 24h. Skor: "
+                + String.format("%.1f", $rs.getScore())
+        );
+        alert.setEscalatedToAnalyst(true);
+        insert(alert);
+
+        modify($client) { setOnWatchlist(true); }
+        System.out.println("[L4] " + alert);
+end
+
+rule "L4: Visok rizik - blokada i step-up"
+    salience 20
+    when
+        $rs: RiskScore(
+            $clientId: clientId,
+            $txId: transactionId,
+            level == RiskLevel.HIGH
+        )
+        $client: Client(clientId == $clientId)
+        not Alert(clientId == $clientId, transactionId == $txId)
+    then
+        Alert alert = new Alert(
+            $clientId, $txId, ActionType.BLOCK_STEPUP,
+            $rs.getLevel(), $rs.getScore(), new Date(),
+            "Transakcija BLOKIRANA do potvrde. Step-up autentifikacija. Skor: "
+                + String.format("%.1f", $rs.getScore())
+        );
+        alert.setEscalatedToAnalyst(true);
+        insert(alert);
+
+        modify($client) {
+            setOnWatchlist(true),
+            setBlockedTransactionsLast7Days($client.getBlockedTransactionsLast7Days() + 1)
+        }
+        System.out.println("[L4] " + alert);
+end
+
+rule "L4: Kriticni rizik - freeze naloga"
+    salience 20
+    when
+        $rs: RiskScore(
+            $clientId: clientId,
+            $txId: transactionId,
+            level == RiskLevel.CRITICAL
+        )
+        $client: Client(clientId == $clientId)
+        not Alert(clientId == $clientId, transactionId == $txId)
+    then
+        Alert alert = new Alert(
+            $clientId, $txId, ActionType.FREEZE_ACCOUNT,
+            $rs.getLevel(), $rs.getScore(), new Date(),
+            "ZAMRZNUT nalog. Hitan kontakt klijentu. Skor: "
+                + String.format("%.1f", $rs.getScore())
+        );
+        alert.setEscalatedToAnalyst(true);
+        insert(alert);
+
+        modify($client) {
+            setOnWatchlist(true),
+            setBlockedTransactionsLast7Days($client.getBlockedTransactionsLast7Days() + 1)
+        }
+        System.out.println("[L4] " + alert);
+end
+
+rule "L4: AML prijava nadleznoj sluzbi"
+    salience 15
+    when
+        $rs: RiskScore(
+            $clientId: clientId,
+            $txId: transactionId,
+            level == RiskLevel.CRITICAL
+        )
+        exists Flag(
+            clientId == $clientId,
+            type in (FlagType.MULING_OBRAZAC,
+                     FlagType.PASS_THROUGH_AKTIVNOST,
+                     FlagType.STRUCTURING)
+        )
+        not Alert(clientId == $clientId, transactionId == $txId, action == ActionType.AML_REPORT)
+    then
+        Alert amlAlert = new Alert(
+            $clientId, $txId, ActionType.AML_REPORT,
+            $rs.getLevel(), $rs.getScore(), new Date(),
+            "AML prijava nadleznoj sluzbi - detektovan muling/structuring/pass-through obrazac"
+        );
+        amlAlert.setEscalatedToAnalyst(true);
+        insert(amlAlert);
+        System.out.println("[L4] " + amlAlert);
+end
+
+rule "L4: Kumulativna eskalacija 3+ blokade u 7 dana"
+    salience 15
+    when
+        $tx: Transaction($clientId: clientId, $txId: transactionId)
+        $client: Client(
+            clientId == $clientId,
+            blockedTransactionsLast7Days >= 3
+        )
+        $existing: Alert(
+            clientId == $clientId,
+            transactionId == $txId,
+            escalatedToAnalyst == false
+        )
+    then
+        modify($existing) {
+            setEscalatedToAnalyst(true),
+            setMessage($existing.getMessage()
+                + " | KUMULATIVNA ESKALACIJA: 3+ blokade u 7 dana")
+        }
+        System.out.println("[L4] Kumulativna eskalacija: " + $existing);
+end
+
+rule "L4: Watchlist klijent - eskaliraj srednji rizik"
+    salience 25
+    when
+        $rs: RiskScore(
+            $clientId: clientId,
+            $txId: transactionId,
+            level == RiskLevel.MEDIUM,
+            $score: score
+        )
+        $client: Client(clientId == $clientId, onWatchlist == true)
+    then
+        modify($rs) {
+            setScore(Math.max($score, 65.0))
+        }
+        System.out.println("[L4] Watchlist eskalacija na HIGH za klijenta " + $clientId);
+end

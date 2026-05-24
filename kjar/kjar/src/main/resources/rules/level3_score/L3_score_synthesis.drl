@@ -1,0 +1,134 @@
+package rules.level3_score;
+
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.facts.RiskScore;
+import com.ftn.sbnz.model.enums.ClientSegment;
+import com.ftn.sbnz.model.enums.FlagType;
+
+import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
+
+rule "L3: Izracunaj bazni skor rizika"
+    salience 50
+    when
+        $tx: Transaction($clientId: clientId, $time: timestamp, $txId: transactionId)
+        $client: Client(clientId == $clientId)
+        not RiskScore(
+            clientId == $clientId,
+            transactionId == $txId
+        )
+        $flags: java.util.List(size > 0) from collect(
+            Flag(clientId == $clientId)
+        )
+    then
+        double score = 0.0;
+        long cutoff = $time.getTime() - 86400000L;
+        List<String> contrib = new ArrayList<String>();
+        List<Flag> activeFlags = new ArrayList<Flag>();
+
+        for (Object o : $flags) {
+            Flag f = (Flag) o;
+            if (f.getTimestamp() != null && f.getTimestamp().getTime() >= cutoff) {
+                score += f.getWeight();
+                contrib.add(f.getType() + "(" + f.getWeight() + ")");
+                activeFlags.add(f);
+            }
+        }
+
+        if (score > 0) {
+            RiskScore rs = new RiskScore($clientId, score, $time);
+            rs.setTransactionId($txId);
+            rs.setContributingFlags(contrib);
+            insert(rs);
+            System.out.println("[L3] Bazni skor: " + rs);
+        }
+end
+
+rule "L3: VIP umanjenje skora za male iznose"
+    salience 45
+    when
+        $tx: Transaction(
+            $clientId: clientId,
+            $amt: amount,
+            $txId: transactionId
+        )
+        $client: Client(clientId == $clientId, segment == ClientSegment.VIP)
+        $rs: RiskScore(
+            clientId == $clientId,
+            transactionId == $txId,
+            appliedMultiplier == 1.0
+        )
+        eval($amt < $client.getAverageTransactionAmount() * 2)
+    then
+        double newScore = $rs.getScore() * 0.8;
+        modify($rs) {
+            setScore(newScore),
+            setAppliedMultiplier(0.8),
+            setMultiplierReason("VIP klijent, mali iznos: -20%")
+        }
+        System.out.println("[L3] VIP umanjenje primenjeno: " + $rs);
+end
+
+rule "L3: Osetljiv segment - multiplikator za APP scam indikatore"
+    salience 45
+    when
+        $client: Client(
+            $clientId: clientId,
+            segment == ClientSegment.MLADI || segment == ClientSegment.PENZIONER
+        )
+        $tx: Transaction(clientId == $clientId, $txId: transactionId)
+        exists Flag(
+            clientId == $clientId,
+            type == FlagType.OBRAZAC_POD_STRESOM
+                || type == FlagType.NEUOBICAJEN_IZNOS
+                || type == FlagType.PRVI_TRANSFER_KA_PRIMAOCU
+        )
+        $rs: RiskScore(
+            clientId == $clientId,
+            transactionId == $txId,
+            appliedMultiplier == 1.0
+        )
+    then
+        double newScore = $rs.getScore() * 1.3;
+        modify($rs) {
+            setScore(newScore),
+            setAppliedMultiplier(1.3),
+            setMultiplierReason("Osetljiv segment + APP scam indikator: x1.3")
+        }
+        System.out.println("[L3] Osetljiv segment multiplikator: " + $rs);
+end
+
+rule "L3: Kombinacija 3+ kriticnih flagova - multiplikator"
+    salience 40
+    when
+        $tx: Transaction($clientId: clientId, $txId: transactionId)
+        $rs: RiskScore(
+            clientId == $clientId,
+            transactionId == $txId
+        )
+        Number(intValue >= 3) from accumulate(
+            $f: Flag(
+                clientId == $clientId,
+                critical == true
+            ),
+            count($f)
+        )
+        eval($rs.getMultiplierReason() == null
+             || !$rs.getMultiplierReason().contains("3+ kriticnih"))
+    then
+        double newMult = $rs.getAppliedMultiplier() * 1.2;
+        double newScore = $rs.getScore() * 1.2;
+        String prevReason = $rs.getMultiplierReason();
+        String reason = (prevReason == null ? "" : prevReason + " + ")
+                      + "3+ kriticnih flagova: x1.2";
+
+        modify($rs) {
+            setScore(newScore),
+            setAppliedMultiplier(newMult),
+            setMultiplierReason(reason)
+        }
+        System.out.println("[L3] Kombinacioni multiplikator: " + $rs);
+end

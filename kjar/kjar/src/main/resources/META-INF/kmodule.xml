@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kmodule xmlns="http://www.drools.org/xsd/kmodule">
+
+    <kbase name="fraudKBase"
+           packages="rules.*"
+           eventProcessingMode="stream"
+           equalsBehavior="identity"
+           default="true">
+
+        <ksession name="fraudSession"
+                  type="stateful"
+                  default="true"
+                  clockType="realtime"/>
+
+        <ksession name="fraudPseudoSession"
+                  type="stateful"
+                  default="false"
+                  clockType="pseudo"/>
+
+    </kbase>
+
+</kmodule>

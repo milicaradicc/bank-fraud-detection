@@ -1,0 +1,275 @@
+package rules.level2_aggregation;
+
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.events.AccountChange;
+import com.ftn.sbnz.model.events.SuspiciousLogin;
+import com.ftn.sbnz.model.events.UserBehavior;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.ConfigList;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.enums.FlagType;
+import com.ftn.sbnz.model.enums.TransactionChannel;
+
+import java.util.Date;
+import java.util.Set;
+
+rule "L2: Muling obrazac - mnogi mali primaoci"
+    salience 90
+    when
+        $tx: Transaction(
+            $clientId: clientId,
+            channel == TransactionChannel.TRANSFER,
+            $time: timestamp
+        )
+        $recipients: Set(size >= 10) from accumulate(
+            Transaction(
+                clientId == $clientId,
+                channel == TransactionChannel.TRANSFER,
+                $r: recipientId != null,
+                amount < 200.0
+            ) over window:time(24h),
+            collectSet($r)
+        )
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.MULING_OBRAZAC,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 3600000)
+        )
+    then
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.MULING_OBRAZAC, $time);
+        flag.setDescription("Muling: " + $recipients.size()
+            + " razlicitih primalaca, prosek < 200EUR u 24h");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Pass-through aktivnost"
+    salience 90
+    when
+        $client: Client(
+            $clientId: clientId,
+            $histRatio: historicalOutflowInflowRatio < 0.3
+        )
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        Flag(clientId == $clientId, type == FlagType.NEOCEKIVANI_PRILIV)
+        $inflow: Number(doubleValue > 0) from accumulate(
+            Transaction(
+                clientId == $clientId,
+                inflow == true,
+                $amtIn: amount
+            ) over window:time(48h),
+            sum($amtIn)
+        )
+        $outflow: Number(doubleValue > 0) from accumulate(
+            Transaction(
+                clientId == $clientId,
+                inflow == false,
+                $amtOut: amount
+            ) over window:time(48h),
+            sum($amtOut)
+        )
+        eval(($outflow.doubleValue() / $inflow.doubleValue()) > 0.9)
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.PASS_THROUGH_AKTIVNOST,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 3600000)
+        )
+    then
+        double ratio = $outflow.doubleValue() / $inflow.doubleValue();
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.PASS_THROUGH_AKTIVNOST, $time);
+        flag.setDescription(String.format(
+            "Pass-through: odliv/priliv=%.2f (istorijski %.2f) u 48h",
+            ratio, $histRatio));
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Sumnjiva aktivacija dugo neaktivnog naloga"
+    salience 95
+    when
+        $client: Client(
+            $clientId: clientId,
+            daysInactiveBeforeReactivation >= 90
+        )
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        (
+            Flag(clientId == $clientId, type == FlagType.ABNORMALNO_VISOKA)
+            or
+            Flag(clientId == $clientId, type == FlagType.NEPOZNAT_UREDJAJ)
+            or
+            Flag(clientId == $clientId, type == FlagType.RIZICNA_LOKACIJA)
+        )
+        not Flag(clientId == $clientId, type == FlagType.SUMNJIVA_AKTIVACIJA)
+    then
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.SUMNJIVA_AKTIVACIJA, $time);
+        flag.setDescription("Aktivacija naloga posle "
+            + $client.getDaysInactiveBeforeReactivation() + " dana mirovanja");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Neocekivani priliv od nepoznatog uplatioca"
+    salience 95
+    when
+        $client: Client($clientId: clientId, $avgMonthly: averageMonthlyTurnover)
+        $tx: Transaction(
+            clientId == $clientId,
+            inflow == true,
+            amount > ($avgMonthly * 0.5),
+            $time: timestamp,
+            $txId: transactionId
+        )
+        not Flag(transactionId == $txId, type == FlagType.NEOCEKIVANI_PRILIV)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.NEOCEKIVANI_PRILIV, $time);
+        flag.setDescription("Priliv " + $tx.getAmount()
+            + " od nepoznatog uplatioca (>50% mesecnog proseka)");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Vise sumnjivih primalaca"
+    salience 90
+    when
+        $tx: Transaction(
+            $clientId: clientId,
+            channel == TransactionChannel.TRANSFER,
+            $time: timestamp
+        )
+        (
+            Flag(clientId == $clientId, type == FlagType.RIZICAN_PRIMALAC)
+            or
+            Flag(clientId == $clientId, type == FlagType.RIZICNA_LOKACIJA)
+        )
+        Number(intValue >= 3) from accumulate(
+            $t: Transaction(
+                clientId == $clientId,
+                channel == TransactionChannel.TRANSFER,
+                (recipientIsNewlyOpenedAccount == true || recipientIsForeignAccount == true)
+            ) over window:time(48h),
+            count($t)
+        )
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.SUMNJIVI_PRIMAOC,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 3600000)
+        )
+    then
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.SUMNJIVI_PRIMAOC, $time);
+        flag.setDescription("3+ primalaca su novootvoreni racuni ili inostrani u 48h");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Burst promena na nalogu"
+    salience 90
+    when
+        $change: AccountChange($clientId: clientId, $time: timestamp)
+        Flag(clientId == $clientId, type == FlagType.NEPOZNAT_UREDJAJ)
+        Number(intValue >= 2) from accumulate(
+            $c: AccountChange(clientId == $clientId) over window:time(60m),
+            count($c)
+        )
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.BURST_AKTIVNOSTI,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 3600000)
+        )
+    then
+        Flag flag = new Flag($clientId, FlagType.BURST_AKTIVNOSTI, $time);
+        flag.setDescription("2+ promena na nalogu u 60 minuta sa nepoznatog uredjaja");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Sumnjiv login pracen izmenom kontakt podataka"
+    salience 90
+    when
+        $susp: SuspiciousLogin($clientId: clientId, $tSusp: timestamp)
+        Flag(clientId == $clientId, type == FlagType.NEPOZNAT_UREDJAJ)
+        $change: AccountChange(
+            clientId == $clientId,
+            this after[0s, 24h] $susp,
+            isContactChange() == true,
+            $tChange: timestamp
+        )
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.IZMENA_KONTAKT_PODATAKA,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 86400000)
+        )
+    then
+        Flag flag = new Flag($clientId, FlagType.IZMENA_KONTAKT_PODATAKA, $tChange);
+        flag.setDescription("Izmena kontakt podataka u 24h od sumnjive prijave sa nepoznatog uredjaja");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Sumnjiv login pracen dodavanjem novog primaoca"
+    salience 90
+    when
+        $susp: SuspiciousLogin($clientId: clientId, $tSusp: timestamp)
+        Flag(clientId == $clientId, type == FlagType.NEPOZNAT_UREDJAJ)
+        $change: AccountChange(
+            clientId == $clientId,
+            changeType == AccountChange.ChangeType.NEW_RECIPIENT,
+            this after[0s, 24h] $susp,
+            $tChange: timestamp
+        )
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.NOVI_PRIMALAC,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 86400000)
+        )
+    then
+        Flag flag = new Flag($clientId, FlagType.NOVI_PRIMALAC, $tChange);
+        flag.setDescription("Novi primalac dodat u 24h od sumnjive prijave sa nepoznatog uredjaja");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Obrazac pod stresom pred transfer"
+    salience 90
+    when
+        $tx: Transaction(
+            $clientId: clientId,
+            $txId: transactionId,
+            channel == TransactionChannel.TRANSFER,
+            $time: timestamp
+        )
+        Flag(clientId == $clientId, transactionId == $txId,
+             type == FlagType.PRVI_TRANSFER_KA_PRIMAOCU)
+        (
+            Flag(clientId == $clientId, transactionId == $txId,
+                 type == FlagType.NEUOBICAJEN_IZNOS)
+            or
+            Flag(clientId == $clientId, transactionId == $txId,
+                 type == FlagType.ABNORMALNO_VISOKA)
+        )
+        Number(intValue >= 2) from accumulate(
+            $b: UserBehavior(
+                clientId == $clientId,
+                (behaviorType == UserBehavior.BehaviorType.LIMIT_SEARCH
+                 || behaviorType == UserBehavior.BehaviorType.URGENT_TRANSFER_HELP
+                 || behaviorType == UserBehavior.BehaviorType.FAILED_TRANSFER),
+                this before[0s, 60m] $tx
+            ),
+            count($b)
+        )
+        not Flag(transactionId == $txId, type == FlagType.OBRAZAC_POD_STRESOM)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.OBRAZAC_POD_STRESOM, $time);
+        flag.setDescription("APP scam: prvi primalac + neuobicajen/abnormalan iznos + 2+ stres aktivnosti u 60 min");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end

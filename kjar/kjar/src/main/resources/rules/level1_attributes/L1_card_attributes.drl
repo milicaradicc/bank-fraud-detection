@@ -1,0 +1,169 @@
+package rules.level1_attributes;
+
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.ConfigList;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.enums.FlagType;
+import com.ftn.sbnz.model.enums.TransactionChannel;
+
+import java.util.Date;
+
+rule "L1: Abnormalno visok iznos transakcije"
+    salience 100
+    when
+        $client: Client($clientId: clientId, $avgAmount: averageTransactionAmount > 0)
+        $tx: Transaction(
+            clientId == $clientId,
+            $txId: transactionId,
+            amount > ($avgAmount * 5),
+            $amt: amount,
+            $time: timestamp
+        )
+        not Flag(transactionId == $txId, type == FlagType.ABNORMALNO_VISOKA)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.ABNORMALNO_VISOKA, $time,
+            "Iznos " + $amt + " je " + String.format("%.2f", $amt / $avgAmount)
+                + "x veći od proseka klijenta");
+        insert(flag);
+        System.out.println("[L1] " + flag);
+end
+
+rule "L1: Transakcija u neuobicajeno vreme"
+    salience 100
+    when
+        $tx: Transaction(
+            $clientId: clientId,
+            $txId: transactionId,
+            $time: timestamp,
+            hourOfDay >= 2,
+            hourOfDay < 5
+        )
+        Client(clientId == $clientId)
+        not Flag(transactionId == $txId, type == FlagType.NEUOBICAJENO_VREME)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.NEUOBICAJENO_VREME, $time,
+            "Transakcija izvršena u " + $tx.getHourOfDay() + "h");
+        insert(flag);
+        System.out.println("[L1] " + flag);
+end
+
+rule "L1: Transakcija iz rizicne zemlje"
+    salience 100
+    when
+        $config: ConfigList()
+        $tx: Transaction(
+            $clientId: clientId,
+            $txId: transactionId,
+            $country: country != null,
+            $time: timestamp
+        )
+        eval($config.isCountryGrayListed($country) || $config.isCountryBlackListed($country))
+        Client(clientId == $clientId)
+        not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+            "Transakcija iz zemlje na rizicnoj listi: " + $country);
+        insert(flag);
+        System.out.println("[L1] " + flag);
+end
+
+rule "L1: Transakcija ka rizicnom merchant-u"
+    salience 100
+    when
+        $config: ConfigList()
+        $tx: Transaction(
+            $clientId: clientId,
+            $txId: transactionId,
+            $mcc: mccCode > 0,
+            $time: timestamp
+        )
+        eval($config.isMccHighRisk($mcc))
+        Client(clientId == $clientId)
+        not Flag(transactionId == $txId, type == FlagType.RIZICAN_MERCHANT)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_MERCHANT, $time,
+            "High-risk merchant MCC: " + $mcc);
+        insert(flag);
+        System.out.println("[L1] " + flag);
+end
+
+rule "L1: Transakcija sa nepoznatog uredjaja"
+    salience 100
+    when
+        $tx: Transaction(
+            $clientId: clientId,
+            $txId: transactionId,
+            $deviceId: deviceId != null,
+            $time: timestamp
+        )
+        $client: Client(clientId == $clientId)
+        eval(!$client.isKnownDevice($deviceId))
+        not Flag(transactionId == $txId, type == FlagType.NEPOZNAT_UREDJAJ)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.NEPOZNAT_UREDJAJ, $time,
+            "Nepoznat uredjaj: " + $deviceId);
+        insert(flag);
+        System.out.println("[L1] " + flag);
+end
+
+rule "L1: Prvi transfer ka novom primaocu"
+    salience 100
+    when
+        $tx: Transaction(
+            $clientId: clientId,
+            $txId: transactionId,
+            channel == TransactionChannel.TRANSFER,
+            $recipientId: recipientId != null,
+            $time: timestamp
+        )
+        $client: Client(clientId == $clientId)
+        eval(!$client.isKnownRecipient($recipientId))
+        not Flag(transactionId == $txId, type == FlagType.PRVI_TRANSFER_KA_PRIMAOCU)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.PRVI_TRANSFER_KA_PRIMAOCU, $time,
+            "Prvi transfer ka primaocu: " + $recipientId);
+        insert(flag);
+        System.out.println("[L1] " + flag);
+end
+
+rule "L1: Neuobicajeno visok iznos transfera"
+    salience 100
+    when
+        $client: Client($clientId: clientId, $avgAmount: averageTransactionAmount > 0)
+        $tx: Transaction(
+            clientId == $clientId,
+            $txId: transactionId,
+            channel == TransactionChannel.TRANSFER,
+            amount > ($avgAmount * 3),
+            amount <= ($avgAmount * 5),
+            $time: timestamp
+        )
+        not Flag(transactionId == $txId, type == FlagType.NEUOBICAJEN_IZNOS)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.NEUOBICAJEN_IZNOS, $time,
+            "Iznos transfera 3-5x veci od proseka");
+        insert(flag);
+        System.out.println("[L1] " + flag);
+end
+
+rule "L1: Rizican primalac transfera"
+    salience 100
+    when
+        $config: ConfigList()
+        $tx: Transaction(
+            $clientId: clientId,
+            $txId: transactionId,
+            channel == TransactionChannel.TRANSFER,
+            $recipientCountry: recipientCountry != null,
+            $time: timestamp
+        )
+        eval($config.isCountryGrayListed($recipientCountry)
+             || $config.isCountryBlackListed($recipientCountry))
+        not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+            "Primalac u rizicnoj jurisdikciji: " + $recipientCountry);
+        insert(flag);
+        System.out.println("[L1] " + flag);
+end

@@ -1,0 +1,94 @@
+package rules.level1_attributes;
+
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.ConfigList;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.enums.FlagType;
+import com.ftn.sbnz.model.enums.ClientSegment;
+
+import java.util.Date;
+
+rule "Profil: Novi racun sa visokim obrtom"
+    salience 150
+    when
+        $client: Client(
+            $clientId: clientId,
+            $avgMonthly: averageMonthlyTurnover > 5000.0
+        )
+        eval($client.daysSinceAccountOpened() <= 30)
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        not Flag(clientId == $clientId, type == FlagType.NOVI_RACUN_VISOK_OBRT)
+    then
+        Flag flag = new Flag($clientId, FlagType.NOVI_RACUN_VISOK_OBRT, $time);
+        flag.setDescription("Racun otvoren pre " + $client.daysSinceAccountOpened()
+            + " dana, prosecan mesecni obrt " + $avgMonthly);
+        insert(flag);
+        System.out.println("[Profil] " + flag);
+end
+
+rule "Profil: Osetljiv segment klijenta"
+    salience 150
+    when
+        $client: Client(
+            $clientId: clientId,
+            segment == ClientSegment.MLADI || segment == ClientSegment.PENZIONER
+        )
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        not Flag(clientId == $clientId, type == FlagType.OSETLJIV_SEGMENT)
+    then
+        Flag flag = new Flag($clientId, FlagType.OSETLJIV_SEGMENT, $time);
+        flag.setDescription("Klijent pripada segmentu " + $client.getSegment());
+        insert(flag);
+        System.out.println("[Profil] " + flag);
+end
+
+rule "Profil: Klijent iz rizicne jurisdikcije"
+    salience 150
+    when
+        $config: ConfigList()
+        $client: Client(
+            $clientId: clientId,
+            $country: countryOfResidence != null
+        )
+        eval($config.isCountryGrayListed($country))
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        not Flag(clientId == $clientId, type == FlagType.SIVA_LISTA_DRZAVA)
+    then
+        Flag flag = new Flag($clientId, FlagType.SIVA_LISTA_DRZAVA, $time);
+        flag.setDescription("Prebivaliste u zemlji na sivoj listi: " + $country);
+        insert(flag);
+        System.out.println("[Profil] " + flag);
+end
+
+rule "Profil: Prethodna potvrdjena prevara"
+    salience 150
+    when
+        $client: Client(
+            $clientId: clientId,
+            hasPreviousFraudCase == true
+        )
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        not Flag(clientId == $clientId, type == FlagType.PRETHODNA_PREVARA)
+    then
+        Flag flag = new Flag($clientId, FlagType.PRETHODNA_PREVARA, $time);
+        flag.setDescription("Klijent ima istoriju prevare u poslednjih 12 meseci");
+        insert(flag);
+        System.out.println("[Profil] " + flag);
+end
+
+rule "Profil: KYC neuspeh u istoriji"
+    salience 150
+    when
+        $client: Client(
+            $clientId: clientId,
+            kycFailed == true
+        )
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        not Flag(clientId == $clientId, type == FlagType.KYC_NEUSPEH)
+    then
+        Flag flag = new Flag($clientId, FlagType.KYC_NEUSPEH, $time);
+        flag.setDescription("Klijent ima neuspele KYC provere");
+        insert(flag);
+        System.out.println("[Profil] " + flag);
+end
