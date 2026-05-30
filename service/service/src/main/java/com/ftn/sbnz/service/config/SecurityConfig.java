@@ -3,6 +3,7 @@ package com.ftn.sbnz.service.config;
 import com.ftn.sbnz.service.security.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -33,6 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/alerts/**").hasAnyRole("ADMIN", "ANALYST")
                         .requestMatchers("/api/diagnostic/**").hasAnyRole("ADMIN", "ANALYST")
                         .requestMatchers("/api/transactions/**").hasAnyRole("ADMIN", "ANALYST", "CLIENT")
+                        .requestMatchers(HttpMethod.POST, "/api/transactions/**").hasAnyRole("ADMIN", "ANALYST")
                         .anyRequest().authenticated()
                 )
                 .headers(h -> h.frameOptions(f -> f.disable())) // za H2 konzolu

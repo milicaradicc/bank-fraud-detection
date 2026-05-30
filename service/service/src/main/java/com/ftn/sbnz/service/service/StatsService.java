@@ -34,8 +34,7 @@ public class StatsService {
         stats.setTotalTransactions(transactions.size());
 
         stats.setBlockedToday(alerts.stream()
-                .filter(a -> a.getAction() == ActionType.BLOCK
-                        || a.getAction() == ActionType.FREEZE_ACCOUNT
+                .filter(a -> a.getAction() == ActionType.FREEZE_ACCOUNT
                         || a.getAction() == ActionType.BLOCK_STEPUP)
                 .count());
 

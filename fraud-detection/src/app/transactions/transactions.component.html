@@ -1,7 +1,85 @@
 <div class="page">
   <div class="page-header">
     <div><h1>Transakcije</h1><p class="text-secondary">Stream transakcija u realnom vremenu</p></div>
+    <button class="btn btn-primary" (click)="showForm = !showForm">
+      + Nova transakcija
+    </button>
   </div>
+
+  <!-- Forma -->
+  <div class="card" *ngIf="showForm">
+    <div class="section-header"><h2>Nova transakcija</h2></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Klijent ID</label>
+        <input type="text" [(ngModel)]="newTx.clientId" placeholder="C-001">
+      </div>
+      <div class="form-group">
+        <label>Iznos (EUR)</label>
+        <input type="number" [(ngModel)]="newTx.amount">
+      </div>
+      <div class="form-group">
+        <label>Kanal</label>
+        <select [(ngModel)]="newTx.channel">
+          <option value="POS">POS</option>
+          <option value="ONLINE">Online</option>
+          <option value="ATM">ATM</option>
+          <option value="TRANSFER">Transfer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Zemlja</label>
+        <input type="text" [(ngModel)]="newTx.country" placeholder="RS">
+      </div>
+      <div class="form-group">
+        <label>Uređaj ID</label>
+        <input type="text" [(ngModel)]="newTx.deviceId" placeholder="DEV-001">
+      </div>
+      <div class="form-group">
+        <label>Primalac ID</label>
+        <input type="text" [(ngModel)]="newTx.recipientId">
+      </div>
+      <div class="form-group">
+        <label>Zemlja primaoca</label>
+        <input type="text" [(ngModel)]="newTx.recipientCountry">
+      </div>
+      <div class="form-group">
+        <label>MCC kod</label>
+        <input type="number" [(ngModel)]="newTx.mccCode">
+      </div>
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" [(ngModel)]="newTx.recipientIsNew"> Novi primalac
+        </label>
+        <label>
+          <input type="checkbox" [(ngModel)]="newTx.recipientIsForeignAccount"> Inostrani račun
+        </label>
+        <label>
+          <input type="checkbox" [(ngModel)]="newTx.inflow"> Priliv
+        </label>
+      </div>
+    </div>
+    <button class="btn btn-primary" (click)="submitTransaction()">▶ Pokreni analizu</button>
+  </div>
+
+  <!-- Rezultat -->
+  <div class="card result-card" *ngIf="result">
+    <div class="result-header">
+      <span class="risk-badge {{result.riskLevel | lowercase}}">
+        {{result.riskLevel}} · {{result.riskScore | number:'1.0-1'}}
+      </span>
+      <span class="channel-badge">{{result.action}}</span>
+      <span class="mono text-muted">{{result.transactionId}}</span>
+    </div>
+    <p class="text-secondary">{{result.message}}</p>
+    <div class="flag-list" *ngIf="result.triggeredFlags.length > 0">
+      <span class="flag-chip" *ngFor="let f of result.triggeredFlags">{{f}}</span>
+    </div>
+    <div *ngIf="result.multiplierReason" class="text-muted" style="font-size:12px; margin-top:8px">
+      Multiplikator: {{result.multiplierReason}}
+    </div>
+  </div>
+
   <div class="filters card">
     <div class="filter-row">
       <input type="text" placeholder="Pretraži klijenta, ID..."
@@ -16,6 +94,7 @@
       <span class="result-count mono">{{filtered.length}} rezultata</span>
     </div>
   </div>
+
   <div class="card table-card">
     <table>
       <thead><tr>
