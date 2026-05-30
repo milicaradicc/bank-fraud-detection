@@ -1,0 +1,34 @@
+.page-header { margin-bottom: 20px; h1 { font-size: 20px; font-weight: 700; margin-bottom: 3px; } }
+
+.filters {
+  margin-bottom: 14px; padding: 14px 16px;
+}
+.filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.filter-row input, .filter-row select { min-width: 160px; flex: 1; }
+.result-count { margin-left: auto; color: var(--text-muted); font-size: 12px; font-family: var(--font-mono); flex-shrink: 0; }
+
+.table-card { padding: 0; overflow: hidden; }
+.row-critical td { background: var(--risk-critical-bg); }
+
+.channel-badge {
+  font-family: var(--font-mono); font-size: 10px; padding: 2px 7px;
+  background: var(--bg-muted); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text-muted); font-weight: 500;
+}
+.risk-cell { display: flex; align-items: center; gap: 8px; }
+.risk-bar-mini { width: 40px; height: 5px; background: var(--bg-muted); border-radius: 3px; overflow: hidden;
+  div { height: 100%;
+    &.fill-low      { background: var(--risk-low); }
+    &.fill-medium   { background: #f59e0b; }
+    &.fill-high     { background: var(--risk-high); }
+    &.fill-critical { background: #9f1239; }
+  }
+}
+.status-badge {
+  font-family: var(--font-mono); font-size: 10px; padding: 2px 9px; border-radius: 20px; font-weight: 500;
+  &.passed  { background: var(--risk-low-bg);      color: var(--risk-low);      border: 1px solid var(--risk-low-border); }
+  &.blocked { background: var(--risk-high-bg);     color: var(--risk-high);     border: 1px solid var(--risk-high-border); }
+  &.pending { background: var(--risk-medium-bg);   color: var(--risk-medium);   border: 1px solid var(--risk-medium-border); }
+  &.frozen  { background: var(--risk-critical-bg); color: var(--risk-critical); border: 1px solid var(--risk-critical-border); }
+}
+.client-name { color: var(--text-primary); font-weight: 500; }

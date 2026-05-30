@@ -1,5 +1,9 @@
 package rules.level2_aggregation;
 
+// or u posebna pravila
+// modify ne update
+// logika u gore
+
 import com.ftn.sbnz.model.events.Transaction;
 import com.ftn.sbnz.model.events.AccountChange;
 import com.ftn.sbnz.model.events.SuspiciousLogin;

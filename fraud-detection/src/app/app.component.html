@@ -1,0 +1,64 @@
+<!-- src/app/app.component.html -->
+<div class="app-shell" *ngIf="isLoggedIn; else loginPage">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">F</div>
+        <div>
+          <div class="logo-title">FraudGuard</div>
+          <div class="logo-subtitle">Drools Engine v2.4</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="live-indicator">
+      <span class="pulse-dot"></span>
+      <span>Sistem aktivan — real-time</span>
+    </div>
+
+    <ul class="nav-links">
+      <li><a routerLink="/dashboard" routerLinkActive="active">
+        <span class="nav-icon">⊞</span> Dashboard
+      </a></li>
+      <li><a routerLink="/transactions" routerLinkActive="active">
+        <span class="nav-icon">↔</span> Transakcije
+      </a></li>
+
+      <!-- Samo ADMIN i ANALYST vide ove stavke -->
+      <ng-container *ngIf="authService.hasRole('ADMIN', 'ANALYST')">
+        <li><a routerLink="/alerts" routerLinkActive="active">
+          <span class="nav-icon">◎</span> Upozorenja
+          <span class="badge" *ngIf="alertCount > 0">{{alertCount}}</span>
+        </a></li>
+        <li><a routerLink="/analytics" routerLinkActive="active">
+          <span class="nav-icon">∿</span> Analitika
+        </a></li>
+        <li><a routerLink="/clients" routerLinkActive="active">
+          <span class="nav-icon">○</span> Klijenti
+        </a></li>
+        <li><a routerLink="/diagnostic" routerLinkActive="active">
+          <span class="nav-icon">⌥</span> Dijagnostika
+        </a></li>
+      </ng-container>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">{{ currentUser?.username?.[0]?.toUpperCase() }}</div>
+        <div>
+          <div class="user-name">{{ currentUser?.username }}</div>
+          <div class="user-role">{{ roleLabel }}</div>
+        </div>
+      </div>
+      <button class="btn-logout" (click)="logout()" title="Odjavi se">⏻</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<ng-template #loginPage>
+  <router-outlet></router-outlet>
+</ng-template>

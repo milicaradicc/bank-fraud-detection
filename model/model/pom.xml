@@ -13,14 +13,22 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <drools.version>7.74.1.Final</drools.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> <drools.version>7.74.1.Final</drools.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
+        <!-- Samo Drools API — model je čist POJO modul -->
         <dependency>
             <groupId>org.kie</groupId>
             <artifactId>kie-api</artifactId>
             <version>${drools.version}</version>
+        </dependency>
+
+        <!-- JPA anotacije (samo za @Entity, @Column itd.) — bez runtime-a -->
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>3.1.0</version>
         </dependency>
     </dependencies>
 

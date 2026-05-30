@@ -1,0 +1,98 @@
+<div class="page">
+  <div class="page-header">
+    <div><h1>Analitika</h1><p class="text-secondary">CEP statistike i trendovi prevara</p></div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="section-header"><h2>Forward Chaining — Nivoi</h2></div>
+      <div class="chain-levels">
+        <div class="chain-level">
+          <div class="level-num">01</div>
+          <div class="level-info">
+            <div class="level-name">Atributi transakcije</div>
+            <div class="text-muted">Izvedeni atributi, flegovi po transakciji</div>
+            <div class="level-rules mono">8 pravila aktivna</div>
+          </div>
+        </div>
+        <div class="chain-arrow">↓</div>
+        <div class="chain-level">
+          <div class="level-num">02</div>
+          <div class="level-info">
+            <div class="level-name">Agregacija (accumulate)</div>
+            <div class="text-muted">Obrasce ponašanja u vremenskom prozoru</div>
+            <div class="level-rules mono">6 pravila aktivna</div>
+          </div>
+        </div>
+        <div class="chain-arrow">↓</div>
+        <div class="chain-level">
+          <div class="level-num">03</div>
+          <div class="level-info">
+            <div class="level-name">Sinteza skora rizika</div>
+            <div class="text-muted">Težine flegova + multiplikatori</div>
+            <div class="level-rules mono">4 pravila aktivna</div>
+          </div>
+        </div>
+        <div class="chain-arrow">↓</div>
+        <div class="chain-level">
+          <div class="level-num">04</div>
+          <div class="level-info">
+            <div class="level-name">Akcija i eskalacija</div>
+            <div class="text-muted">Blokada, alert, zamrzavanje, AML prijava</div>
+            <div class="level-rules mono">5 pravila aktivna</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header"><h2>CEP Pravila — Status</h2></div>
+      <div class="cep-rules">
+        <div class="cep-rule" *ngFor="let r of cepRules">
+          <div class="cep-rule-header">
+            <span class="cep-rule-name mono">{{r.name}}</span>
+            <span class="cep-status active">AKTIVAN</span>
+          </div>
+          <div class="cep-params text-secondary">{{r.window}} · min {{r.minCount}} događaja</div>
+          <div class="cep-fires">
+            <div class="cep-bar-track"><div class="cep-bar-fill" [style.width.%]="(r.fires/30)*100"></div></div>
+            <span class="mono text-muted">{{r.fires}} okidanja danas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header"><h2>Template parametri</h2></div>
+      <div class="templates">
+        <div class="template-item" *ngFor="let t of templates">
+          <div class="template-header">
+            <span class="template-name">{{t.name}}</span>
+            <span class="template-count mono">{{t.rules}} pravila</span>
+          </div>
+          <div class="text-muted" style="font-size:12px">{{t.desc}}</div>
+          <div class="template-params">
+            <span class="param-chip" *ngFor="let p of t.params">{{'@'}}{{p}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-header"><h2>Satni volumen transakcija</h2></div>
+    <div class="bar-chart" *ngIf="stats">
+      <div class="bar-group" *ngFor="let h of stats.hourlyVolume">
+        <div class="bars">
+          <div class="bar normal" [style.height.px]="(h.normal/240)*120" title="Normalne: {{h.normal}}"></div>
+          <div class="bar suspicious" [style.height.px]="(h.suspicious/240)*120" title="Sumnjive: {{h.suspicious}}"></div>
+        </div>
+        <div class="bar-label mono">{{h.hour}}</div>
+      </div>
+      <div class="chart-legend">
+        <span class="legend-dot" style="background:var(--accent-blue)"></span> Normalne
+        <span class="legend-dot" style="background:var(--risk-high); margin-left:16px"></span> Sumnjive
+      </div>
+    </div>
+  </div>
+</div>

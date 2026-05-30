@@ -1,0 +1,47 @@
+<div class="page">
+  <div class="page-header">
+    <div><h1>Klijenti</h1><p class="text-secondary">Profili rizika i watchlist</p></div>
+  </div>
+  <div class="clients-grid">
+    <div class="client-card card" *ngFor="let c of clients" [class.on-watchlist]="c.onWatchlist">
+      <div class="client-header">
+        <div class="client-avatar {{c.segment}}">{{c.name[0]}}</div>
+        <div>
+          <div class="client-name">{{c.name}}</div>
+          <div class="mono text-muted" style="font-size:11px">{{c.id}} · {{c.age}} god.</div>
+        </div>
+        <div class="watchlist-badge" *ngIf="c.onWatchlist">⚑ Watchlist</div>
+      </div>
+
+      <div class="client-meta">
+        <div class="meta-item">
+          <span class="text-muted">Segment</span>
+          <span class="segment-tag {{c.segment}}">{{c.segment | uppercase}}</span>
+        </div>
+        <div class="meta-item">
+          <span class="text-muted">Mes. promet</span>
+          <span class="meta-value mono">{{c.avgMonthlyVolume | currency:'EUR':'symbol':'1.0-0'}}</span>
+        </div>
+        <div class="meta-item">
+          <span class="text-muted">Uređaji</span>
+          <span class="meta-value mono">{{c.knownDevices}}</span>
+        </div>
+        <div class="meta-item">
+          <span class="text-muted">Primaoci</span>
+          <span class="meta-value mono">{{c.knownRecipients}}</span>
+        </div>
+      </div>
+
+      <div class="risk-row">
+        <span class="risk-label">Skor rizika</span>
+        <div class="risk-bar-full"><div [style.width.%]="c.riskScore" [class]="'fill-'+c.riskLevel"></div></div>
+        <span class="risk-badge {{c.riskLevel}}">{{c.riskScore}}</span>
+      </div>
+
+      <div class="flag-list" *ngIf="c.flags.length > 0">
+        <span class="flag-chip" *ngFor="let f of c.flags">{{f}}</span>
+      </div>
+      <div class="no-flags" *ngIf="c.flags.length === 0">// nema aktivnih flegova</div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,73 @@
+<div class="page">
+  <div class="page-header">
+    <div><h1>Backward Chaining — Dijagnostika</h1><p class="text-secondary">Postavite hipotezu — sistem rekonstruiše lanac dokaza</p></div>
+  </div>
+
+  <div class="card query-card">
+    <div class="section-header"><h2>query — Drools Backward Chaining</h2></div>
+    <div class="query-form">
+      <div class="form-group">
+        <label>Hipoteza</label>
+        <select [(ngModel)]="selectedHypothesis">
+          <option value="account_takeover">accountTakeover(acc)</option>
+          <option value="money_mule">reaches(from, to) — Money Mule</option>
+          <option value="app_scam">appScam(acc) — APP Scam</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ID Klijenta</label>
+        <select [(ngModel)]="selectedClient">
+          <option *ngFor="let c of clients" [value]="c.id">{{c.id}} — {{c.name}}</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" (click)="runDiagnostic()" [disabled]="running">
+        <span *ngIf="!running">▶ Pokreni query</span>
+        <span *ngIf="running">● Izvršavam...</span>
+      </button>
+    </div>
+
+    <div class="drools-snippet">
+      <div class="snippet-label mono text-muted">// Drools query — {{getQueryName()}}</div>
+      <pre class="code-block">{{getQueryCode()}}</pre>
+    </div>
+  </div>
+
+  <div class="result-card card" *ngIf="result" [class.confirmed]="result.confirmed" [class.rejected]="!result.confirmed">
+    <div class="result-header">
+      <div class="result-title">
+        <span class="result-icon">{{result.confirmed ? '✓' : '✕'}}</span>
+        <span>Hipoteza <strong>{{getHypothesisLabel(result.hypothesis)}}</strong></span>
+      </div>
+      <div class="result-meta">
+        <span class="risk-badge {{result.confirmed ? 'critical' : 'low'}}">{{result.confirmed ? 'POTVRĐENA' : 'ODBIJENA'}}</span>
+        <span class="confidence mono">Pouzdanost: {{result.confidence}}%</span>
+        <span class="mono text-muted">{{result.timestamp}}</span>
+      </div>
+    </div>
+
+    <div class="evidence-tree">
+      <div class="tree-label mono text-muted">// Lanac dokaza — stablo backward chaining-a</div>
+      <div class="evidence-chain">
+        <div class="evidence-node" *ngFor="let e of result.evidenceChain; let i = index" [class.confirmed]="e.confirmed" [class.failed]="!e.confirmed">
+          <div class="node-connector" *ngIf="i > 0"></div>
+          <div class="node-content">
+            <div class="node-header">
+              <span class="node-icon">{{e.confirmed ? '✓' : '✕'}}</span>
+              <span class="node-label mono">{{e.label}}</span>
+              <span class="node-type {{e.type}}">{{e.type === 'query' ? 'query' : 'Flag'}}</span>
+            </div>
+            <div class="node-detail text-secondary">{{e.detail}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-conclusion" *ngIf="result.confirmed">
+      <div class="conclusion-icon">⚠</div>
+      <div>
+        <div class="conclusion-title">Preporučena akcija</div>
+        <div class="text-secondary">{{getRecommendation(result.hypothesis)}}</div>
+      </div>
+    </div>
+  </div>
+</div>

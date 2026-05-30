@@ -1,0 +1,40 @@
+<div class="page">
+  <div class="page-header">
+    <div><h1>Upozorenja</h1><p class="text-secondary">Slučajevi označeni za pregled analitičara</p></div>
+  </div>
+
+  <div class="alerts-grid">
+    <div class="alert-card card" *ngFor="let alert of alerts" [class.alert-critical]="alert.riskLevel === 'critical'">
+      <div class="alert-header">
+        <div class="alert-meta">
+          <span class="mono text-muted">{{alert.id}}</span>
+          <span class="risk-badge {{alert.riskLevel}}">{{alert.riskLevel | uppercase}} · {{alert.riskScore}}</span>
+        </div>
+        <span class="alert-status {{alert.status}}">{{getStatusLabel(alert.status)}}</span>
+      </div>
+
+      <div class="alert-client">
+        <div class="client-avatar">{{alert.clientName[0]}}</div>
+        <div>
+          <div class="client-name">{{alert.clientName}}</div>
+          <div class="mono text-muted" style="font-size:11px">{{alert.clientId}} · {{alert.time}}</div>
+        </div>
+        <div class="fraud-type-badge {{alert.type}}">{{getFraudTypeLabel(alert.type)}}</div>
+      </div>
+
+      <p class="alert-desc text-secondary">{{alert.description}}</p>
+
+      <div class="flag-list">
+        <span class="flag-chip" *ngFor="let f of alert.flags">{{f}}</span>
+      </div>
+
+      <div class="alert-actions" *ngIf="alert.status !== 'confirmed' && alert.status !== 'dismissed'">
+        <button class="btn btn-primary" (click)="confirm(alert.id)">✓ Potvrdi prevaru</button>
+        <button class="btn btn-ghost" (click)="review(alert.id)">⟳ Pregled</button>
+        <button class="btn btn-danger" (click)="dismiss(alert.id)">✕ Odbaci</button>
+      </div>
+      <div class="resolved-label" *ngIf="alert.status === 'confirmed'">✓ Potvrđeno kao prevara</div>
+      <div class="dismissed-label" *ngIf="alert.status === 'dismissed'">✕ Odbačeno</div>
+    </div>
+  </div>
+</div>

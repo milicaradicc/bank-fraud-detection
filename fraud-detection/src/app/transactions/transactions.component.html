@@ -1,0 +1,48 @@
+<div class="page">
+  <div class="page-header">
+    <div><h1>Transakcije</h1><p class="text-secondary">Stream transakcija u realnom vremenu</p></div>
+  </div>
+  <div class="filters card">
+    <div class="filter-row">
+      <input type="text" placeholder="Pretraži klijenta, ID..." [(ngModel)]="searchTerm" (input)="applyFilters()">
+      <select [(ngModel)]="filterRisk" (change)="applyFilters()">
+        <option value="">Svi rizici</option><option value="low">Nizak</option><option value="medium">Srednji</option><option value="high">Visok</option><option value="critical">Kritičan</option>
+      </select>
+      <select [(ngModel)]="filterChannel" (change)="applyFilters()">
+        <option value="">Svi kanali</option><option value="POS">POS</option><option value="ONLINE">Online</option><option value="ATM">ATM</option><option value="TRANSFER">Transfer</option>
+      </select>
+      <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+        <option value="">Svi statusi</option><option value="passed">Odobren</option><option value="blocked">Blokiran</option><option value="pending">Na čekanju</option><option value="frozen">Zamrznut</option>
+      </select>
+      <span class="result-count mono">{{filtered.length}} rezultata</span>
+    </div>
+  </div>
+  <div class="card table-card">
+    <table>
+      <thead><tr>
+        <th>Vreme</th><th>ID Transakcije</th><th>Klijent</th><th>Iznos</th><th>Kanal</th><th>Zemlja</th><th>Skor rizika</th><th>Flegovi</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        <tr *ngFor="let tx of filtered" [class.row-critical]="tx.riskLevel === 'critical'">
+          <td class="mono text-muted">{{tx.time}}</td>
+          <td class="mono text-muted">{{tx.id}}</td>
+          <td><span class="client-name">{{tx.clientName}}</span></td>
+          <td class="mono" [class.amount-high]="tx.riskScore > 60">{{tx.amount | currency:'EUR':'symbol':'1.0-0'}}</td>
+          <td><span class="channel-badge">{{tx.channel}}</span></td>
+          <td class="mono">{{tx.country}}</td>
+          <td>
+            <div class="risk-cell">
+              <div class="risk-bar-mini"><div [style.width.%]="tx.riskScore" [class]="'fill-'+tx.riskLevel"></div></div>
+              <span class="risk-badge {{tx.riskLevel}}">{{tx.riskScore}}</span>
+            </div>
+          </td>
+          <td>
+            <span class="flag-chip" *ngFor="let f of tx.flags.slice(0,2)">{{f}}</span>
+            <span *ngIf="tx.flags.length > 2" class="mono text-muted" style="font-size:11px">+{{tx.flags.length-2}}</span>
+          </td>
+          <td><span class="status-badge {{tx.status}}">{{tx.status | uppercase}}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

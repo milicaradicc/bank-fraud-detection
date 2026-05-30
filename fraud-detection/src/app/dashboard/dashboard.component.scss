@@ -1,0 +1,66 @@
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: 20px; font-weight: 700; margin-bottom: 3px; }
+
+/* ── Stat cards ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+
+.stat-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  &.danger { border-color: var(--risk-high-border); background: var(--risk-high-bg); }
+  &.warn   { border-color: var(--risk-medium-border); background: var(--risk-medium-bg); }
+}
+.stat-icon { font-size: 20px; margin-bottom: 12px; display: block; }
+.stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+.stat-value { font-size: 30px; font-weight: 700; color: var(--text-primary); line-height: 1; margin-bottom: 8px; font-family: var(--font-mono); }
+.stat-unit { font-size: 16px; font-weight: 400; }
+.stat-sub { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+.stat-up { color: var(--risk-low); font-size: 11px; }
+
+/* ── Two-column grid ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+/* ── Risk distribution bars ── */
+.risk-bars { display: flex; flex-direction: column; gap: 11px; }
+.risk-bar-row { display: flex; align-items: center; gap: 10px; }
+.risk-bar-label { font-size: 12px; color: var(--text-secondary); width: 110px; flex-shrink: 0; }
+.risk-bar-track { flex: 1; height: 7px; background: var(--bg-muted); border-radius: 4px; overflow: hidden; }
+.risk-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.risk-bar-count { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); width: 40px; text-align: right; }
+
+/* ── Fraud type list ── */
+.fraud-type-list { display: flex; flex-direction: column; gap: 11px; }
+.fraud-type-row { display: flex; align-items: center; gap: 10px; }
+.fraud-type-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.fraud-type-name { font-size: 13px; color: var(--text-secondary); width: 150px; flex-shrink: 0; }
+.fraud-type-bar-track { flex: 1; height: 6px; background: var(--bg-muted); border-radius: 4px; overflow: hidden; }
+.fraud-type-bar-fill { height: 100%; border-radius: 4px; opacity: 0.7; }
+
+/* ── Table section ── */
+.recent-section { padding: 0; overflow: hidden; }
+.table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.table-header h2 { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+
+.channel-badge {
+  font-family: var(--font-mono); font-size: 10px; padding: 2px 7px;
+  background: var(--bg-muted); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text-muted); font-weight: 500;
+}
+.risk-score-cell { display: flex; align-items: center; gap: 8px; }
+.risk-bar-mini { width: 44px; height: 5px; background: var(--bg-muted); border-radius: 3px; overflow: hidden;
+  div { height: 100%; border-radius: 3px;
+    &.fill-low      { background: var(--risk-low); }
+    &.fill-medium   { background: #f59e0b; }
+    &.fill-high     { background: var(--risk-high); }
+    &.fill-critical { background: #9f1239; }
+  }
+}
+.status-badge {
+  font-family: var(--font-mono); font-size: 10px; padding: 2px 9px; border-radius: 20px; font-weight: 500;
+  &.passed  { background: var(--risk-low-bg);      color: var(--risk-low);      border: 1px solid var(--risk-low-border); }
+  &.blocked { background: var(--risk-high-bg);     color: var(--risk-high);     border: 1px solid var(--risk-high-border); }
+  &.pending { background: var(--risk-medium-bg);   color: var(--risk-medium);   border: 1px solid var(--risk-medium-border); }
+  &.frozen  { background: var(--risk-critical-bg); color: var(--risk-critical); border: 1px solid var(--risk-critical-border); }
+}
+.client-link { color: var(--text-primary); font-weight: 500; }
