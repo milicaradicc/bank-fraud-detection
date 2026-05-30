@@ -91,7 +91,7 @@ public class DemoScenariosService {
             clock.advanceTime(t0, TimeUnit.MILLISECONDS);
 
             Client marija = new Client("MARIJA_001", "Marija Radic", 45,
-                    ClientSegment.REDOVNI, LocalDate.now().minusYears(5),
+                    ClientSegment.REGULAR, LocalDate.now().minusYears(5),
                     "RS", 2500.0, 250.0);
             marija.getKnownDevices().add("Marijin-Telefon");
             marija.getKnownDevices().add("Marijin-Laptop");
@@ -212,7 +212,7 @@ public class DemoScenariosService {
             clock.advanceTime(t0, TimeUnit.MILLISECONDS);
 
             Client stefan = new Client("STEFAN_002", "Stefan M.", 28,
-                    ClientSegment.REDOVNI, LocalDate.now().minusMonths(4),
+                    ClientSegment.REGULAR, LocalDate.now().minusMonths(4),
                     "RS", 1500.0, 150.0);
             stefan.setDaysInactiveBeforeReactivation(95);
             stefan.setHistoricalOutflowInflowRatio(0.20);
@@ -304,7 +304,7 @@ public class DemoScenariosService {
             clock.advanceTime(t0, TimeUnit.MILLISECONDS);
 
             Client olga = new Client("OLGA_003", "Olga P.", 72,
-                    ClientSegment.PENZIONER, LocalDate.now().minusYears(3),
+                    ClientSegment.PENSIONER, LocalDate.now().minusYears(3),
                     "RS", 800.0, 200.0);
             olga.getKnownDevices().add("Olgin-Tablet");
             olga.getKnownRecipients().add("Cerka-Marija");
@@ -457,7 +457,7 @@ public class DemoScenariosService {
             clock.advanceTime(t0, TimeUnit.MILLISECONDS);
 
             Client risky = new Client("RISKY_005", "Petar K.", 22,
-                    ClientSegment.MLADI, LocalDate.now().minusDays(15),
+                    ClientSegment.YOUNG, LocalDate.now().minusDays(15),
                     "AF", 8000.0, 300.0);
             risky.setHasPreviousFraudCase(true);
             risky.setKycFailed(true);
@@ -519,7 +519,7 @@ public class DemoScenariosService {
             clock.advanceTime(t0, TimeUnit.MILLISECONDS);
 
             Client darko = new Client("DARKO_006", "Darko M.", 35,
-                    ClientSegment.REDOVNI, LocalDate.now().minusYears(2),
+                    ClientSegment.REGULAR, LocalDate.now().minusYears(2),
                     "RS", 1500.0, 200.0);
             darko.getKnownDevices().add("Darko-Telefon");
 
@@ -572,7 +572,7 @@ public class DemoScenariosService {
             clock.advanceTime(t0, TimeUnit.MILLISECONDS);
 
             Client jovana = new Client("JOVANA_007", "Jovana T.", 32,
-                    ClientSegment.REDOVNI, LocalDate.now().minusYears(4),
+                    ClientSegment.REGULAR, LocalDate.now().minusYears(4),
                     "RS", 3000.0, 400.0);
             jovana.getKnownDevices().add("Jovanin-Telefon");
 
@@ -659,7 +659,7 @@ public class DemoScenariosService {
             clock.advanceTime(t0, TimeUnit.MILLISECONDS);
 
             Client milan = new Client("MILAN_008", "Milan B.", 50,
-                    ClientSegment.REDOVNI, LocalDate.now().minusYears(8),
+                    ClientSegment.REGULAR, LocalDate.now().minusYears(8),
                     "RS", 10000.0, 1500.0);
             milan.getKnownDevices().add("Milan-Telefon");
 
@@ -716,7 +716,7 @@ public class DemoScenariosService {
             clock.advanceTime(t0, TimeUnit.MILLISECONDS);
 
             Client ana = new Client("ANA_009", "Ana S.", 40,
-                    ClientSegment.REDOVNI, LocalDate.now().minusYears(5),
+                    ClientSegment.REGULAR, LocalDate.now().minusYears(5),
                     "RS", 2000.0, 300.0);
             ana.getKnownDevices().add("Ana-Telefon");
             ana.getKnownRecipients().add("Mama");
@@ -770,7 +770,7 @@ public class DemoScenariosService {
             clock.advanceTime(t0, TimeUnit.MILLISECONDS);
 
             Client nemanja = new Client("NEMANJA_010", "Nemanja V.", 45,
-                    ClientSegment.REDOVNI, LocalDate.now().minusYears(6),
+                    ClientSegment.REGULAR, LocalDate.now().minusYears(6),
                     "RS", 2000.0, 250.0);
             nemanja.getKnownDevices().add("Nemanja-Telefon");
             nemanja.setOnWatchlist(true);

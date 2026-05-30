@@ -77,7 +77,7 @@ rule "L3: Osetljiv segment - multiplikator za APP scam indikatore"
     when
         $client: Client(
             $clientId: clientId,
-            segment == ClientSegment.MLADI || segment == ClientSegment.PENZIONER
+            segment == ClientSegment.YOUNG || segment == ClientSegment.PENSIONER
         )
         $tx: Transaction(clientId == $clientId, $txId: transactionId)
         exists Flag(

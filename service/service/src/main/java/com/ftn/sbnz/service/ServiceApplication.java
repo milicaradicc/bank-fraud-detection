@@ -3,6 +3,7 @@ package com.ftn.sbnz.service;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieScanner;
 import org.kie.api.runtime.KieContainer;
+import org.kie.api.runtime.KieSession;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -29,5 +30,10 @@ public class ServiceApplication {
         KieScanner kScanner = ks.newKieScanner(kContainer);
         kScanner.start(1000);
         return kContainer;
+    }
+
+    @Bean
+    public KieSession kieSession(KieContainer kieContainer) {
+        return kieContainer.newKieSession();
     }
 }

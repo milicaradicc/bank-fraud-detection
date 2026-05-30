@@ -78,21 +78,4 @@
       </div>
     </div>
   </div>
-
-  <div class="card">
-    <div class="section-header"><h2>Satni volumen transakcija</h2></div>
-    <div class="bar-chart" *ngIf="stats">
-      <div class="bar-group" *ngFor="let h of stats.hourlyVolume">
-        <div class="bars">
-          <div class="bar normal" [style.height.px]="(h.normal/240)*120" title="Normalne: {{h.normal}}"></div>
-          <div class="bar suspicious" [style.height.px]="(h.suspicious/240)*120" title="Sumnjive: {{h.suspicious}}"></div>
-        </div>
-        <div class="bar-label mono">{{h.hour}}</div>
-      </div>
-      <div class="chart-legend">
-        <span class="legend-dot" style="background:var(--accent-blue)"></span> Normalne
-        <span class="legend-dot" style="background:var(--risk-high); margin-left:16px"></span> Sumnjive
-      </div>
-    </div>
-  </div>
 </div>

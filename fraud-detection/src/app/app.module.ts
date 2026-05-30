@@ -12,23 +12,29 @@ import { ClientProfileComponent } from './client-profile/client-profile.componen
 import { DiagnosticComponent } from './diagnostic/diagnostic.component';
 import { FraudDataService } from './services/fraud-data.service';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { JwtInterceptor } from './interceptors/jwt.interceptor';
 
 @NgModule({
   declarations: [
-    AppComponent, 
-    DashboardComponent, 
-    TransactionsComponent, 
-    AlertsComponent, 
-    AnalyticsComponent, 
-    ClientProfileComponent, 
+    AppComponent,
+    DashboardComponent,
+    TransactionsComponent,
+    AlertsComponent,
+    AnalyticsComponent,
+    ClientProfileComponent,
     DiagnosticComponent,
-    LoginComponent],
+    LoginComponent
+  ],
   imports: [
-    BrowserModule, 
-    FormsModule, 
+    BrowserModule,
+    FormsModule,
     AppRoutingModule,
-    HttpClientModule],
-  providers: [FraudDataService],
+    HttpClientModule
+  ],
+  providers: [
+    FraudDataService,
+    { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {}

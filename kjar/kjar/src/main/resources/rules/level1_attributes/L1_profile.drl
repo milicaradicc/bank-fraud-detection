@@ -32,7 +32,7 @@ rule "Profil: Osetljiv segment klijenta"
     when
         $client: Client(
             $clientId: clientId,
-            segment == ClientSegment.MLADI || segment == ClientSegment.PENZIONER
+            segment == ClientSegment.YOUNG || segment == ClientSegment.PENSIONER
         )
         $tx: Transaction(clientId == $clientId, $time: timestamp)
         not Flag(clientId == $clientId, type == FlagType.OSETLJIV_SEGMENT)

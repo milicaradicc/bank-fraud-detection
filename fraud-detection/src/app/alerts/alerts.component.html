@@ -4,7 +4,7 @@
   </div>
 
   <div class="alerts-grid">
-    <div class="alert-card card" *ngFor="let alert of alerts" [class.alert-critical]="alert.riskLevel === 'critical'">
+    <div class="alert-card card" *ngFor="let alert of alerts" [class.alert-critical]="alert.riskLevel === 'CRITICAL'">
       <div class="alert-header">
         <div class="alert-meta">
           <span class="mono text-muted">{{alert.id}}</span>

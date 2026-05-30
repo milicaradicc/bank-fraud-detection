@@ -38,10 +38,10 @@
         <span class="risk-badge {{c.riskLevel}}">{{c.riskScore}}</span>
       </div>
 
-      <div class="flag-list" *ngIf="c.flags.length > 0">
+      <div class="flag-list" *ngIf="c.flags && c.flags.length > 0">
         <span class="flag-chip" *ngFor="let f of c.flags">{{f}}</span>
       </div>
-      <div class="no-flags" *ngIf="c.flags.length === 0">// nema aktivnih flegova</div>
+      <div class="no-flags" *ngIf="!c.flags || c.flags.length === 0">// nema aktivnih flegova</div>
     </div>
   </div>
 </div>

@@ -1,20 +1,33 @@
 import { Component, OnInit } from '@angular/core';
 import { FraudDataService, Transaction } from '../services/fraud-data.service';
 
-@Component({ selector: 'app-transactions', templateUrl: './transactions.component.html', styleUrls: ['./transactions.component.scss'] })
+@Component({
+  selector: 'app-transactions',
+  templateUrl: './transactions.component.html',
+  styleUrls: ['./transactions.component.scss']
+})
 export class TransactionsComponent implements OnInit {
-  all: Transaction[] = [];
+  transactions: Transaction[] = [];
   filtered: Transaction[] = [];
-  searchTerm = ''; filterRisk = ''; filterChannel = ''; filterStatus = '';
+  searchTerm = '';
+  filterChannel = '';
 
-  constructor(private fraudData: FraudDataService) {}
-  ngOnInit() { this.fraudData.getTransactions().subscribe(t => { this.all = t; this.applyFilters(); }); }
+  constructor(private fraudDataService: FraudDataService) {}
+
+  ngOnInit() {
+    this.fraudDataService.getTransactions().subscribe(data => {
+      this.transactions = data;
+      this.filtered = data;
+    });
+  }
+
   applyFilters() {
-    this.filtered = this.all.filter(t =>
-      (!this.searchTerm || t.clientName.toLowerCase().includes(this.searchTerm.toLowerCase()) || t.id.includes(this.searchTerm)) &&
-      (!this.filterRisk || t.riskLevel === this.filterRisk) &&
-      (!this.filterChannel || t.channel === this.filterChannel) &&
-      (!this.filterStatus || t.status === this.filterStatus)
-    );
+    this.filtered = this.transactions.filter(tx => {
+      const matchSearch = !this.searchTerm ||
+        tx.clientId.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        tx.transactionId.toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchChannel = !this.filterChannel || tx.channel === this.filterChannel;
+      return matchSearch && matchChannel;
+    });
   }
 }

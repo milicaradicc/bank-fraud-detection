@@ -89,8 +89,8 @@
             </div>
           </td>
           <td>
-            <span class="flag-chip" *ngFor="let f of tx.flags.slice(0,1)">{{f}}</span>
-            <span class="text-muted mono" *ngIf="tx.flags.length > 1" style="font-size:11px"> +{{tx.flags.length - 1}}</span>
+            <span class="flag-chip" *ngFor="let f of (tx.flags || []).slice(0,1)">{{f}}</span>
+            <span class="text-muted mono" *ngIf="tx.flags && tx.flags.length > 1" style="font-size:11px"> +{{tx.flags.length - 1}}</span>
           </td>
           <td><span class="status-badge {{tx.status}}">{{tx.status | uppercase}}</span></td>
         </tr>
