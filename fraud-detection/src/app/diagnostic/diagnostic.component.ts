@@ -1,12 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { FraudDataService, Client } from '../services/fraud-data.service';
+import { HttpClient } from '@angular/common/http';
+
+export interface EvidenceItem {
+  flagType: string;
+  description: string;
+  timestamp: string;
+  critical: boolean;
+}
 
 export interface DiagnosticResult {
   hypothesis: string;
   clientId: string;
   confirmed: boolean;
-  confidence: number;
-  evidenceChain: { label: string; type: string; confirmed: boolean; detail: string }[];
+  evidenceChain: EvidenceItem[];
+  explanation: string;
   timestamp: string;
 }
 
@@ -19,10 +27,15 @@ export class DiagnosticComponent implements OnInit {
   clients: Client[] = [];
   selectedHypothesis = 'account_takeover';
   selectedClient = '';
+  customClientId = '';
+  useCustomId = false;
   result: DiagnosticResult | null = null;
   running = false;
+  error = '';
 
-  constructor(private fraudData: FraudDataService) {}
+  private readonly API = 'http://localhost:8080/api/diagnostic';
+
+  constructor(private fraudData: FraudDataService, private http: HttpClient) {}
 
   ngOnInit() {
     this.fraudData.getClients().subscribe(data => {
@@ -33,23 +46,83 @@ export class DiagnosticComponent implements OnInit {
     });
   }
 
-  runDiagnostic() {
-    this.running = true;
-    setTimeout(() => {
-      this.result = {
-        hypothesis: this.selectedHypothesis,
-        clientId: this.selectedClient,
-        confirmed: true,
-        confidence: 80,
-        evidenceChain: [],
-        timestamp: new Date().toLocaleTimeString()
-      };
-      this.running = false;
-    }, 800);
+  get effectiveClientId(): string {
+    return this.useCustomId ? this.customClientId : this.selectedClient;
   }
 
-  getQueryName() { return this.selectedHypothesis; }
-  getQueryCode() { return '// Drools query'; }
-  getHypothesisLabel(h: string) { return h; }
-  getRecommendation(h: string) { return 'Kontaktirajte klijenta'; }
+  runDiagnostic() {
+    const clientId = this.effectiveClientId;
+    if (!clientId) return;
+
+    this.running = true;
+    this.error = '';
+    this.result = null;
+
+    const endpoint = this.selectedHypothesis === 'account_takeover'
+      ? `${this.API}/account-takeover/${clientId}`
+      : `${this.API}/app-scam/${clientId}`;
+
+    this.http.get<any>(endpoint).subscribe({
+      next: res => {
+        this.result = {
+          hypothesis: res.hypothesis,
+          clientId: res.clientId,
+          confirmed: res.confirmed,
+          evidenceChain: res.evidenceChain || [],
+          explanation: res.explanation,
+          timestamp: new Date().toLocaleTimeString('sr')
+        };
+        this.running = false;
+      },
+      error: () => {
+        this.error = 'Greška pri pozivu dijagnostike. Proveri da li klijent postoji.';
+        this.running = false;
+      }
+    });
+  }
+
+  getQueryName() {
+    return this.selectedHypothesis === 'account_takeover' ? 'accountTakeover' : 'appScam';
+  }
+
+  getQueryCode() {
+    if (this.selectedHypothesis === 'account_takeover') {
+      return `query compromisedAccess(String acc)
+    Flag(clientId == acc, type == FlagType.BRUTE_FORCE_POKUSAJ)
+    or
+    Flag(clientId == acc, type == FlagType.SUSPICIOUS_LOGIN)
+end
+
+query accountTakeover(String acc)
+    compromisedAccess(acc;)
+    ( Flag(clientId == acc, type == FlagType.IZMENA_KONTAKT_PODATAKA)
+      or Flag(clientId == acc, type == FlagType.NOVI_PRIMALAC) )
+    Flag(clientId == acc, type == FlagType.ABNORMALNO_VISOKA)
+end`;
+    }
+    return `query appScam(String acc)
+    Flag(clientId == acc, type == FlagType.PRVI_TRANSFER_KA_PRIMAOCU)
+    Flag(clientId == acc, type == FlagType.ABNORMALNO_VISOKA)
+    ( Flag(clientId == acc, type == FlagType.OBRAZAC_POD_STRESOM)
+      or Flag(clientId == acc, type == FlagType.OSETLJIV_SEGMENT) )
+end`;
+  }
+
+  getHypothesisLabel(h: string) {
+    const map: Record<string, string> = {
+      'ACCOUNT_TAKEOVER': 'Account Takeover',
+      'APP_SCAM': 'APP Scam'
+    };
+    return map[h] || h;
+  }
+
+  getRecommendation(h: string) {
+    if (h === 'ACCOUNT_TAKEOVER') {
+      return 'Kontaktirajte klijenta telefonskim pozivom, vratite lozinku, uklonite kompromitovanog primaoca, prijavite slučaj.';
+    }
+    if (h === 'APP_SCAM') {
+      return 'Pokrenite cooling-off mehanizam — odložite transfer 24h i kontaktirajte klijenta da proverite da li je pod uticajem prevare.';
+    }
+    return 'Pregledajte slučaj ručno.';
+  }
 }

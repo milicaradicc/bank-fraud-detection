@@ -10,16 +10,29 @@
         <label>Hipoteza</label>
         <select [(ngModel)]="selectedHypothesis">
           <option value="account_takeover">accountTakeover(acc)</option>
-          <option value="money_mule">reaches(from, to) — Money Mule</option>
           <option value="app_scam">appScam(acc) — APP Scam</option>
         </select>
       </div>
+
       <div class="form-group">
+        <label>
+          <input type="checkbox" [(ngModel)]="useCustomId" style="width:auto; margin-right:6px">
+          Unesi ID ručno (npr. demo klijent)
+        </label>
+      </div>
+
+      <div class="form-group" *ngIf="!useCustomId">
         <label>ID Klijenta</label>
         <select [(ngModel)]="selectedClient">
           <option *ngFor="let c of clients" [value]="c.id">{{c.id}} — {{c.name}}</option>
         </select>
       </div>
+
+      <div class="form-group" *ngIf="useCustomId">
+        <label>ID Klijenta (npr. MARIJA_001, OLGA_003)</label>
+        <input type="text" [(ngModel)]="customClientId" placeholder="MARIJA_001">
+      </div>
+
       <button class="btn btn-primary" (click)="runDiagnostic()" [disabled]="running">
         <span *ngIf="!running">▶ Pokreni query</span>
         <span *ngIf="running">● Izvršavam...</span>
@@ -32,31 +45,37 @@
     </div>
   </div>
 
+  <div class="card" *ngIf="error" style="border-color: var(--risk-high-border)">
+    <p style="color: var(--risk-high)">⚠ {{error}}</p>
+  </div>
+
   <div class="result-card card" *ngIf="result" [class.confirmed]="result.confirmed" [class.rejected]="!result.confirmed">
     <div class="result-header">
       <div class="result-title">
         <span class="result-icon">{{result.confirmed ? '✓' : '✕'}}</span>
-        <span>Hipoteza <strong>{{getHypothesisLabel(result.hypothesis)}}</strong></span>
+        <span>Hipoteza <strong>{{getHypothesisLabel(result.hypothesis)}}</strong> za {{result.clientId}}</span>
       </div>
       <div class="result-meta">
         <span class="risk-badge {{result.confirmed ? 'critical' : 'low'}}">{{result.confirmed ? 'POTVRĐENA' : 'ODBIJENA'}}</span>
-        <span class="confidence mono">Pouzdanost: {{result.confidence}}%</span>
         <span class="mono text-muted">{{result.timestamp}}</span>
       </div>
     </div>
 
-    <div class="evidence-tree">
-      <div class="tree-label mono text-muted">// Lanac dokaza — stablo backward chaining-a</div>
-      <div class="evidence-chain">
-        <div class="evidence-node" *ngFor="let e of result.evidenceChain; let i = index" [class.confirmed]="e.confirmed" [class.failed]="!e.confirmed">
+    <p class="text-secondary" style="margin: 10px 0">{{result.explanation}}</p>
+
+    <div class="evidence-tree" *ngIf="result.confirmed && result.evidenceChain.length > 0">
+      <div class="tree-label mono text-muted">// Hronološki tok dokaza koji su doveli do potvrde</div>
+      <div class="evidence-chain" style="margin-top: 12px">
+        <div class="evidence-node" *ngFor="let e of result.evidenceChain; let i = index" [class.confirmed]="true">
           <div class="node-connector" *ngIf="i > 0"></div>
           <div class="node-content">
             <div class="node-header">
-              <span class="node-icon">{{e.confirmed ? '✓' : '✕'}}</span>
-              <span class="node-label mono">{{e.label}}</span>
-              <span class="node-type {{e.type}}">{{e.type === 'query' ? 'query' : 'Flag'}}</span>
+              <span class="node-icon">✓</span>
+              <span class="mono text-muted" style="margin-right: 8px">{{e.timestamp | date:'HH:mm:ss'}}</span>
+              <span class="node-label mono">{{e.flagType}}</span>
+              <span class="node-type" [class.critical]="e.critical">{{e.critical ? 'kritičan' : 'standardni'}}</span>
             </div>
-            <div class="node-detail text-secondary">{{e.detail}}</div>
+            <div class="node-detail text-secondary">{{e.description}}</div>
           </div>
         </div>
       </div>

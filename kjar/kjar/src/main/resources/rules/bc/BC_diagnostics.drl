@@ -1,0 +1,48 @@
+package rules.bc;
+
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.enums.FlagType;
+
+// ============================================================
+// Hipoteza 1 — Account Takeover
+// ============================================================
+
+query compromisedAccess(String acc)
+    Flag(clientId == acc, type == FlagType.BRUTE_FORCE_POKUSAJ)
+    or
+    Flag(clientId == acc, type == FlagType.SUSPICIOUS_LOGIN)
+end
+
+query accountTakeover(String acc)
+    compromisedAccess(acc;)
+    ( Flag(clientId == acc, type == FlagType.IZMENA_KONTAKT_PODATAKA)
+      or Flag(clientId == acc, type == FlagType.NOVI_PRIMALAC) )
+    Flag(clientId == acc, type == FlagType.ABNORMALNO_VISOKA)
+end
+
+// ============================================================
+// Hipoteza 2 — APP Scam
+// ============================================================
+
+query appScam(String acc)
+    Flag(clientId == acc, type == FlagType.PRVI_TRANSFER_KA_PRIMAOCU)
+    Flag(clientId == acc, type == FlagType.ABNORMALNO_VISOKA)
+    ( Flag(clientId == acc, type == FlagType.OBRAZAC_POD_STRESOM)
+      or Flag(clientId == acc, type == FlagType.OSETLJIV_SEGMENT) )
+end
+
+// ============================================================
+// Hipoteza 3 — Money Mule (rekurzivni graf)
+// ============================================================
+
+query reaches(String from, String to)
+    Transaction(clientId == from, recipientId == to, inflow == false)
+    or
+    ( Transaction(clientId == from, $z: recipientId, inflow == false)
+      and reaches($z, to;) )
+end
+
+query muleSource(String acc, String source)
+    reaches(acc, source;)
+end

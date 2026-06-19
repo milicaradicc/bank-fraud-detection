@@ -62,7 +62,7 @@ public class DataInitializer implements CommandLineRunner {
         });
 
         userRepository.findByUsername("marija.nikolic").ifPresent(u -> {
-            u.setEmail("milica.t.radic@gmail.com"); 
+            u.setEmail("milica.t.radic@gmail.com");
             userRepository.save(u);
         });
     }

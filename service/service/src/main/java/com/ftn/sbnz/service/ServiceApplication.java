@@ -39,15 +39,6 @@ public class ServiceApplication {
 
     @Bean
     public KieSession kieSession(KieContainer kieContainer) {
-        KieServices ks = KieServices.Factory.get();
-
-        KieBaseConfiguration kbConf = ks.newKieBaseConfiguration();
-        kbConf.setOption(EventProcessingOption.STREAM);
-        KieBase kBase = kieContainer.newKieBase(kbConf);
-
-        KieSessionConfiguration ksConf = ks.newKieSessionConfiguration();
-        ksConf.setOption(ClockTypeOption.get("pseudo"));
-
-        return kBase.newKieSession(ksConf, null);
+        return kieContainer.newKieSession("fraudPseudoSession");
     }
 }
