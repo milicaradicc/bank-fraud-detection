@@ -24,4 +24,21 @@ public class GeoUtil {
         double requiredSpeed = distance / hours;
         return requiredSpeed > MAX_TRAVEL_SPEED_KMH;
     }
+
+    public static String buildTravelDescription(double lat1, double lon1,
+                                                double lat2, double lon2,
+                                                long durationMs) {
+        double dist = distanceKm(lat1, lon1, lat2, lon2);
+        long minutes = durationMs / 60000;
+        return "Impossible travel: " + String.format("%.0f", dist)
+                + "km za " + minutes + " min";
+    }
+
+    public static String buildLoginTravelDescription(double lat1, double lon1,
+                                                     double lat2, double lon2) {
+        double dist = distanceKm(lat1, lon1, lat2, lon2);
+        return "Impossible travel u login-u: " + String.format("%.0f", dist) + "km";
+    }
+
+    
 }

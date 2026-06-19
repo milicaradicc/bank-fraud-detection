@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FraudDataService, Transaction } from '../services/fraud-data.service';
+import { AuthService } from '../services/auth.service';
 import { HttpClient } from '@angular/common/http';
+import { DeviceFingerprintService } from '../services/device-fingerprint.service';
 
 export interface TransactionResult {
   transactionId: string;
@@ -13,6 +15,7 @@ export interface TransactionResult {
   triggeredFlags: string[];
   contributingFlags: string[];
   multiplierReason: string;
+  requiresStepUp: boolean;
 }
 
 @Component({
@@ -27,28 +30,44 @@ export class TransactionsComponent implements OnInit {
   filterChannel = '';
   showForm = false;
   result: TransactionResult | null = null;
+  isClient = false;
+
+  stepUpCode = '';
+  stepUpStatus: 'idle' | 'confirming' | 'success' | 'error' = 'idle';
+  stepUpMessage = '';
+
   newTx = {
-    clientId: 'C-001',
+    clientId: '',
     amount: 0,
     currency: 'EUR',
     channel: 'TRANSFER',
     country: 'RS',
+    city: '',
     deviceId: '',
     recipientId: '',
-    recipientIsNew: false,
-    recipientIsForeignAccount: false,
     recipientCountry: '',
-    inflow: false,
     mccCode: 0
   };
 
   constructor(
-      private fraudDataService: FraudDataService,
-      private http: HttpClient
-    ) {}
-    
+    private fraudDataService: FraudDataService,
+    private authService: AuthService,
+    private http: HttpClient,
+    private deviceFingerprint: DeviceFingerprintService,
+  ) {}
+
   ngOnInit() {
-    this.fraudDataService.getTransactions().subscribe(data => {
+    this.isClient = this.authService.isClient();
+    this.newTx.deviceId = this.deviceFingerprint.getDeviceId();
+    this.loadTransactions();
+  }
+
+  loadTransactions() {
+    const endpoint = this.isClient
+      ? 'http://localhost:8080/api/transactions/my'
+      : 'http://localhost:8080/api/transactions';
+
+    this.http.get<Transaction[]>(endpoint).subscribe(data => {
       this.transactions = data;
       this.filtered = data;
     });
@@ -65,17 +84,55 @@ export class TransactionsComponent implements OnInit {
   }
 
   submitTransaction() {
+    this.stepUpStatus = 'idle';
+    this.stepUpCode = '';
+
     this.http.post<TransactionResult>(
       'http://localhost:8080/api/transactions', this.newTx
     ).subscribe({
       next: res => {
         this.result = res;
-        this.fraudDataService.getTransactions().subscribe(data => {
-          this.transactions = data;
-          this.filtered = data;
-        });
+        this.loadTransactions();
+        this.showForm = false;
       },
       error: err => console.error(err)
     });
+  }
+
+  confirmStepUp() {
+    if (!this.result || !this.stepUpCode) return;
+    this.stepUpStatus = 'confirming';
+
+    this.http.post<{ confirmed: boolean; message: string }>(
+      `http://localhost:8080/api/transactions/${this.result.transactionId}/confirm`,
+      { code: this.stepUpCode }
+    ).subscribe({
+      next: res => {
+        this.stepUpStatus = res.confirmed ? 'success' : 'error';
+        this.stepUpMessage = res.message;
+      },
+      error: () => {
+        this.stepUpStatus = 'error';
+        this.stepUpMessage = 'Greška pri potvrdi. Pokušajte ponovo.';
+      }
+    });
+  }
+
+  resetForm() {
+    this.newTx = {
+      clientId: '',
+      amount: 0,
+      currency: 'EUR',
+      channel: 'TRANSFER',
+      country: 'RS',
+      city: '',
+      deviceId: this.deviceFingerprint.getDeviceId(),
+      recipientId: '',
+      recipientCountry: '',
+      mccCode: 0
+    };
+    this.result = null;
+    this.stepUpStatus = 'idle';
+    this.stepUpCode = '';
   }
 }

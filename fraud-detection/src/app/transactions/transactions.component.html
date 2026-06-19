@@ -2,7 +2,7 @@
   <div class="page-header">
     <div><h1>Transakcije</h1><p class="text-secondary">Stream transakcija u realnom vremenu</p></div>
     <button class="btn btn-primary" (click)="showForm = !showForm">
-      + Nova transakcija
+      {{ showForm ? '✕ Zatvori' : '+ Nova transakcija' }}
     </button>
   </div>
 
@@ -10,56 +10,98 @@
   <div class="card" *ngIf="showForm">
     <div class="section-header"><h2>Nova transakcija</h2></div>
     <div class="form-grid">
-      <div class="form-group">
+
+      <!-- Samo admin/analyst biraju klijenta -->
+      <div class="form-group" *ngIf="!isClient">
         <label>Klijent ID</label>
         <input type="text" [(ngModel)]="newTx.clientId" placeholder="C-001">
       </div>
+
       <div class="form-group">
         <label>Iznos (EUR)</label>
-        <input type="number" [(ngModel)]="newTx.amount">
+        <input type="number" [(ngModel)]="newTx.amount" placeholder="0">
       </div>
+
       <div class="form-group">
         <label>Kanal</label>
         <select [(ngModel)]="newTx.channel">
-          <option value="POS">POS</option>
-          <option value="ONLINE">Online</option>
-          <option value="ATM">ATM</option>
-          <option value="TRANSFER">Transfer</option>
+          <option value="POS">POS — plaćanje na terminalu</option>
+          <option value="ONLINE">Online — internet kupovina</option>
+          <option value="ATM">ATM — podizanje gotovine</option>
+          <option value="TRANSFER">Transfer — prenos na račun</option>
         </select>
       </div>
+
       <div class="form-group">
-        <label>Zemlja</label>
-        <input type="text" [(ngModel)]="newTx.country" placeholder="RS">
+        <label>Zemlja transakcije</label>
+        <select [(ngModel)]="newTx.country">
+          <option value="RS">Srbija (RS)</option>
+          <option value="DE">Nemačka (DE)</option>
+          <option value="FR">Francuska (FR)</option>
+          <option value="NL">Holandija (NL)</option>
+          <option value="GB">Velika Britanija (GB)</option>
+          <option value="US">SAD (US)</option>
+          <option value="KY">Kajmanska ostrva (KY) ⚠</option>
+          <option value="PA">Panama (PA) ⚠</option>
+          <option value="AE">UAE (AE) ⚠</option>
+          <option value="RU">Rusija (RU) ⚠</option>
+          <option value="IR">Iran (IR) 🚫</option>
+          <option value="KP">Severna Koreja (KP) 🚫</option>
+        </select>
       </div>
-      <div class="form-group">
-        <label>Uređaj ID</label>
-        <input type="text" [(ngModel)]="newTx.deviceId" placeholder="DEV-001">
+
+      <!-- Grad — za POS i ATM -->
+      <div class="form-group" *ngIf="newTx.channel === 'POS' || newTx.channel === 'ATM'">
+        <label>Grad</label>
+        <input type="text" [(ngModel)]="newTx.city" placeholder="Beograd">
       </div>
-      <div class="form-group">
+
+      <!-- Transfer polja -->
+      <div class="form-group" *ngIf="newTx.channel === 'TRANSFER'">
         <label>Primalac ID</label>
-        <input type="text" [(ngModel)]="newTx.recipientId">
+        <input type="text" [(ngModel)]="newTx.recipientId" placeholder="R-001">
       </div>
-      <div class="form-group">
+
+      <div class="form-group" *ngIf="newTx.channel === 'TRANSFER'">
         <label>Zemlja primaoca</label>
-        <input type="text" [(ngModel)]="newTx.recipientCountry">
+        <select [(ngModel)]="newTx.recipientCountry">
+          <option value="">— Odaberi —</option>
+          <option value="RS">Srbija (RS)</option>
+          <option value="DE">Nemačka (DE)</option>
+          <option value="FR">Francuska (FR)</option>
+          <option value="NL">Holandija (NL)</option>
+          <option value="GB">Velika Britanija (GB)</option>
+          <option value="US">SAD (US)</option>
+          <option value="KY">Kajmanska ostrva (KY) ⚠</option>
+          <option value="PA">Panama (PA) ⚠</option>
+          <option value="AE">UAE (AE) ⚠</option>
+          <option value="RU">Rusija (RU) ⚠</option>
+          <option value="IR">Iran (IR) 🚫</option>
+          <option value="KP">Severna Koreja (KP) 🚫</option>
+        </select>
       </div>
-      <div class="form-group">
-        <label>MCC kod</label>
-        <input type="number" [(ngModel)]="newTx.mccCode">
+
+      <!-- Merchant kategorija — samo POS i ONLINE -->
+      <div class="form-group" *ngIf="newTx.channel === 'POS' || newTx.channel === 'ONLINE'">
+        <label>Kategorija</label>
+        <select [(ngModel)]="newTx.mccCode">
+          <option [value]="0">— Opšte —</option>
+          <option [value]="5411">Supermarket</option>
+          <option [value]="5812">Restoran</option>
+          <option [value]="5541">Gorivo</option>
+          <option [value]="5912">Apoteka</option>
+          <option [value]="5999">Ostala maloprodaja</option>
+          <option [value]="7995">Gambling ⚠</option>
+          <option [value]="6051">Kripto / Quasi-cash ⚠</option>
+          <option [value]="4829">Transfer novca ⚠</option>
+        </select>
       </div>
-      <div class="form-group checkbox-group">
-        <label>
-          <input type="checkbox" [(ngModel)]="newTx.recipientIsNew"> Novi primalac
-        </label>
-        <label>
-          <input type="checkbox" [(ngModel)]="newTx.recipientIsForeignAccount"> Inostrani račun
-        </label>
-        <label>
-          <input type="checkbox" [(ngModel)]="newTx.inflow"> Priliv
-        </label>
-      </div>
+
     </div>
-    <button class="btn btn-primary" (click)="submitTransaction()">▶ Pokreni analizu</button>
+    <div style="display:flex; gap:10px; align-items:center">
+      <button class="btn btn-primary" (click)="submitTransaction()">▶ Pokreni analizu</button>
+      <button class="btn btn-ghost" (click)="resetForm()">↺ Resetuj</button>
+    </div>
   </div>
 
   <!-- Rezultat -->
@@ -71,12 +113,33 @@
       <span class="channel-badge">{{result.action}}</span>
       <span class="mono text-muted">{{result.transactionId}}</span>
     </div>
-    <p class="text-secondary">{{result.message}}</p>
+    <p class="text-secondary" style="margin-top:8px">{{result.message}}</p>
     <div class="flag-list" *ngIf="result.triggeredFlags.length > 0">
       <span class="flag-chip" *ngFor="let f of result.triggeredFlags">{{f}}</span>
     </div>
     <div *ngIf="result.multiplierReason" class="text-muted" style="font-size:12px; margin-top:8px">
       Multiplikator: {{result.multiplierReason}}
+    </div>
+
+    <!-- Step-up potvrda -->
+    <div *ngIf="result.requiresStepUp && stepUpStatus !== 'success'" class="step-up-box">
+      <p class="text-secondary" style="margin-bottom:10px">
+        📧 Kod za potvrdu je poslat na vašu email adresu. Unesite ga ispod da potvrdite transakciju.
+      </p>
+      <div style="display:flex; gap:10px; align-items:center">
+        <input type="text" placeholder="000000" maxlength="6"
+          [(ngModel)]="stepUpCode" style="max-width:140px; text-align:center; letter-spacing:4px; font-family:var(--font-mono)">
+        <button class="btn btn-primary" (click)="confirmStepUp()" [disabled]="stepUpStatus === 'confirming'">
+          {{ stepUpStatus === 'confirming' ? '● Potvrđujem...' : '✓ Potvrdi kod' }}
+        </button>
+      </div>
+      <div *ngIf="stepUpStatus === 'error'" class="login-error" style="margin-top:10px">
+        ⚠ {{ stepUpMessage }}
+      </div>
+    </div>
+
+    <div *ngIf="stepUpStatus === 'success'" class="text-muted" style="margin-top:10px; color: var(--risk-low)">
+      ✓ {{ stepUpMessage }}
     </div>
   </div>
 

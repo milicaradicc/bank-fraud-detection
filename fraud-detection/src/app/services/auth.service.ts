@@ -59,4 +59,8 @@ export class AuthService {
     const user = this.getCurrentUser();
     return user ? roles.includes(user.role) : false;
   }
+
+  isClient(): boolean {
+    return this.getCurrentUser()?.role === 'CLIENT';
+  }
 }

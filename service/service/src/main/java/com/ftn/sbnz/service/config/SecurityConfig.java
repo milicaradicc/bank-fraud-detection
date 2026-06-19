@@ -35,6 +35,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/diagnostic/**").hasAnyRole("ADMIN", "ANALYST")
                         .requestMatchers("/api/transactions/**").hasAnyRole("ADMIN", "ANALYST", "CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/transactions/**").hasAnyRole("ADMIN", "ANALYST")
+                        .requestMatchers("/api/transactions/my").hasRole("CLIENT")
+                        .requestMatchers("/api/v1/demo/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(h -> h.frameOptions(f -> f.disable())) // za H2 konzolu

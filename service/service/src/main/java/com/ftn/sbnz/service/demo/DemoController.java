@@ -78,8 +78,12 @@ public class DemoController {
                                 "demonstrira", "sistem ne pravi lazne alarme - 0 flagova za normalnu transakciju"),
                         Map.of("br", 10, "path", "/api/v1/demo/cumulative",
                                 "naziv", "Cumulative Escalation",
-                                "demonstrira", "modify() feedback, watchlist boost MEDIUM->HIGH, kumulativna eskalacija")
-                ),
+                                "demonstrira", "modify() feedback, watchlist boost MEDIUM->HIGH, kumulativna eskalacija"),
+                        // U listScenarios() - dodaj u listu:
+                        Map.of("br", 11, "path", "/api/v1/demo/cep-all",
+                                "naziv", "CEP - Svih 7 pravila",
+                                "demonstrira", "CEP 1-7: velocity attack, impossible travel (tx+login), "
+                                        + "structuring, burst nakon mirovanja, brute force, suspicious login")),
                 "kombinovani", Map.of(
                         "path", "/api/v1/demo/all",
                         "opis", "Svih 10 scenarija u jednom JSON-u")
@@ -161,5 +165,11 @@ public class DemoController {
         results.add(scenarios.runHappyPathScenario());
         results.add(scenarios.runCumulativeEscalationScenario());
         return results;
+    }
+
+    @GetMapping("/cep-all")
+    public ResponseEntity<ScenarioResult> cepAll() {
+        log.info("Scenario: Svih 7 CEP pravila");
+        return ResponseEntity.ok(scenarios.runAllCepScenario());
     }
 }

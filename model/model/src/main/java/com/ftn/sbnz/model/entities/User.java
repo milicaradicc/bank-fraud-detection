@@ -24,6 +24,9 @@ public class User {
     // Opciono: veza ka Client faktu (samo za CLIENT rolu)
     private String linkedClientId;
 
+    @Column
+    private String email;
+
     public User() {}
 
     public User(String username, String password, Role role) {
@@ -42,4 +45,6 @@ public class User {
     public void setRole(Role role) { this.role = role; }
     public String getLinkedClientId() { return linkedClientId; }
     public void setLinkedClientId(String linkedClientId) { this.linkedClientId = linkedClientId; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

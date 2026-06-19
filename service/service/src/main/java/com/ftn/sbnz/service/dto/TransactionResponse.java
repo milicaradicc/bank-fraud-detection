@@ -14,6 +14,7 @@ public class TransactionResponse {
     private List<String> triggeredFlags;
     private List<String> contributingFlags;
     private String multiplierReason;
+    private boolean requiresStepUp;
 
     public TransactionResponse() {}
 
@@ -37,4 +38,6 @@ public class TransactionResponse {
     public void setContributingFlags(List<String> v) { this.contributingFlags = v; }
     public String getMultiplierReason() { return multiplierReason; }
     public void setMultiplierReason(String v) { this.multiplierReason = v; }
+    public boolean isRequiresStepUp() { return requiresStepUp; }
+    public void setRequiresStepUp(boolean requiresStepUp) { this.requiresStepUp = requiresStepUp; }
 }

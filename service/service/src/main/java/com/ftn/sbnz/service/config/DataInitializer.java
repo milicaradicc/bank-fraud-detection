@@ -4,7 +4,9 @@ import com.ftn.sbnz.model.enums.*;
 import com.ftn.sbnz.model.events.Transaction;
 import com.ftn.sbnz.model.facts.Client;
 import com.ftn.sbnz.model.facts.ConfigList;
+import com.ftn.sbnz.service.repository.UserRepository;
 import com.ftn.sbnz.service.service.AuthService;
+import com.ftn.sbnz.service.service.TransactionService;
 import org.kie.api.runtime.KieSession;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -17,10 +19,17 @@ public class DataInitializer implements CommandLineRunner {
 
     private final AuthService authService;
     private final KieSession kieSession;
+    private final UserRepository userRepository;
+    private final TransactionService transactionService;
 
-    public DataInitializer(AuthService authService, KieSession kieSession) {
+    public DataInitializer(AuthService authService,
+                           KieSession kieSession,
+                           UserRepository userRepository,
+                           TransactionService transactionService) {
         this.authService = authService;
         this.kieSession = kieSession;
+        this.userRepository = userRepository;
+        this.transactionService = transactionService;
     }
 
     @Override
@@ -32,16 +41,33 @@ public class DataInitializer implements CommandLineRunner {
     private void seedUsers() {
         try { authService.register("admin", "admin123", Role.ADMIN); } catch (Exception ignored) {}
         try { authService.register("analyst1", "analyst123", Role.ANALYST); } catch (Exception ignored) {}
-        try { authService.register("marija.nikolic", "client123", Role.CLIENT); } catch (Exception ignored) {}
-        try { authService.register("petar.jovic", "client123", Role.CLIENT); } catch (Exception ignored) {}
-        try { authService.register("ana.stojanovic", "client123", Role.CLIENT); } catch (Exception ignored) {}
-        try { authService.register("jovan.djordjevic", "client123", Role.CLIENT); } catch (Exception ignored) {}
-        try { authService.register("milena.pavlovic", "client123", Role.CLIENT); } catch (Exception ignored) {}
-        try { authService.register("ivana.markovic", "client123", Role.CLIENT); } catch (Exception ignored) {}
+
+        Map<String, String> clientLinks = Map.of(
+                "marija.nikolic", "C-001",
+                "petar.jovic", "C-002",
+                "ana.stojanovic", "C-003",
+                "jovan.djordjevic", "C-004",
+                "milena.pavlovic", "C-005",
+                "ivana.markovic", "C-007"
+        );
+
+        clientLinks.forEach((username, clientId) -> {
+            try {
+                authService.register(username, "client123", Role.CLIENT);
+                userRepository.findByUsername(username).ifPresent(u -> {
+                    u.setLinkedClientId(clientId);
+                    userRepository.save(u);
+                });
+            } catch (Exception ignored) {}
+        });
+
+        userRepository.findByUsername("marija.nikolic").ifPresent(u -> {
+            u.setEmail("milica.t.radic@gmail.com"); 
+            userRepository.save(u);
+        });
     }
 
     private void initWorkingMemory() {
-        // ConfigList
         ConfigList config = new ConfigList();
         config.setAmlReportingThreshold(15000.0);
         config.setBlackListedCountries(new HashSet<>(Set.of("KP", "IR", "SY", "CU")));
@@ -54,13 +80,13 @@ public class DataInitializer implements CommandLineRunner {
         Client c1 = new Client("C-001", "Marija Nikolić", 45, ClientSegment.REGULAR,
                 LocalDate.of(2019, 3, 15), "RS", 2500, 300);
         c1.setOnWatchlist(true);
-        c1.setKnownDevices(new HashSet<>(Set.of("DEV-001", "DEV-002")));
+        c1.setKnownDevices(new HashSet<>(Set.of("DEV-611B38E2", "DEV-002")));
         c1.setKnownRecipients(new HashSet<>(Set.of("R-001", "R-002", "R-003")));
         kieSession.insert(c1);
 
         Client c2 = new Client("C-002", "Petar Jović", 34, ClientSegment.REGULAR,
                 LocalDate.of(2018, 7, 22), "RS", 1800, 200);
-        c2.setKnownDevices(new HashSet<>(Set.of("DEV-010", "DEV-011", "DEV-012")));
+        c2.setKnownDevices(new HashSet<>(Set.of("DEV-611B38E2", "DEV-011", "DEV-012")));
         kieSession.insert(c2);
 
         Client c3 = new Client("C-003", "Ana Stojanović", 29, ClientSegment.REGULAR,
@@ -68,7 +94,7 @@ public class DataInitializer implements CommandLineRunner {
         c3.setDaysInactiveBeforeReactivation(94);
         c3.setOnWatchlist(true);
         c3.setHistoricalOutflowInflowRatio(0.2);
-        c3.setKnownDevices(new HashSet<>(Set.of("DEV-020")));
+        c3.setKnownDevices(new HashSet<>(Set.of("DEV-611B38E2")));
         kieSession.insert(c3);
 
         Client c4 = new Client("C-004", "Jovan Đorđević", 52, ClientSegment.VIP,
@@ -99,6 +125,7 @@ public class DataInitializer implements CommandLineRunner {
         t1.setRecipientIsForeignAccount(true);
         t1.setRecipientCountry("NL");
         t1.setInflow(false);
+        transactionService.addToLog(t1);
         kieSession.insert(t1);
 
         Transaction t2 = new Transaction("TX-00420", "C-002", 320, new Date(), TransactionChannel.POS);
@@ -108,6 +135,7 @@ public class DataInitializer implements CommandLineRunner {
         t2.setDeviceId("DEV-010");
         t2.setMerchantCategory("GROCERY");
         t2.setMccCode(5411);
+        transactionService.addToLog(t2);
         kieSession.insert(t2);
 
         Transaction t3 = new Transaction("TX-00419", "C-003", 9200, new Date(), TransactionChannel.TRANSFER);
@@ -119,12 +147,14 @@ public class DataInitializer implements CommandLineRunner {
         t3.setRecipientIsForeignAccount(true);
         t3.setRecipientCountry("KY");
         t3.setInflow(false);
+        transactionService.addToLog(t3);
         kieSession.insert(t3);
 
         Transaction t4 = new Transaction("TX-00418", "C-004", 150, new Date(), TransactionChannel.ATM);
         t4.setCurrency("EUR");
         t4.setCountry("RS");
         t4.setCity("Novi Sad");
+        transactionService.addToLog(t4);
         kieSession.insert(t4);
 
         Transaction t5 = new Transaction("TX-00417", "C-005", 7500, new Date(), TransactionChannel.TRANSFER);
@@ -133,6 +163,7 @@ public class DataInitializer implements CommandLineRunner {
         t5.setRecipientId("R-NEW-002");
         t5.setRecipientIsNew(true);
         t5.setInflow(false);
+        transactionService.addToLog(t5);
         kieSession.insert(t5);
 
         Transaction t6 = new Transaction("TX-00415", "C-007", 14800, new Date(), TransactionChannel.TRANSFER);
@@ -140,6 +171,7 @@ public class DataInitializer implements CommandLineRunner {
         t6.setCountry("RS");
         t6.setRecipientId("R-MUL-001");
         t6.setInflow(false);
+        transactionService.addToLog(t6);
         kieSession.insert(t6);
 
         kieSession.fireAllRules();

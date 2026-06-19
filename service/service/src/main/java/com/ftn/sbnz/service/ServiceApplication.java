@@ -1,9 +1,14 @@
 package com.ftn.sbnz.service;
 
+import org.kie.api.KieBase;
+import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieScanner;
+import org.kie.api.conf.EventProcessingOption;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.KieSessionConfiguration;
+import org.kie.api.runtime.conf.ClockTypeOption;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -34,6 +39,15 @@ public class ServiceApplication {
 
     @Bean
     public KieSession kieSession(KieContainer kieContainer) {
-        return kieContainer.newKieSession();
+        KieServices ks = KieServices.Factory.get();
+
+        KieBaseConfiguration kbConf = ks.newKieBaseConfiguration();
+        kbConf.setOption(EventProcessingOption.STREAM);
+        KieBase kBase = kieContainer.newKieBase(kbConf);
+
+        KieSessionConfiguration ksConf = ks.newKieSessionConfiguration();
+        ksConf.setOption(ClockTypeOption.get("pseudo"));
+
+        return kBase.newKieSession(ksConf, null);
     }
 }

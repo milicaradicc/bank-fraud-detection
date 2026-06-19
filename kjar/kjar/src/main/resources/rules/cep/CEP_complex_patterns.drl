@@ -23,12 +23,7 @@ rule "CEP: Velocity attack - card testing"
                 over window:time(60s),
             count($t)
         )
-        not Flag(
-            clientId == $clientId,
-            type == FlagType.VELOCITY_ATTACK,
-            $t: timestamp,
-            eval(System.currentTimeMillis() - $t.getTime() < 60000)
-        )
+        not Flag(clientId == $clientId, type == FlagType.VELOCITY_ATTACK)
     then
         Flag flag = new Flag($clientId, $tx.getTransactionId(),
             FlagType.VELOCITY_ATTACK, $time);
@@ -61,9 +56,9 @@ rule "CEP: Impossible travel izmedju transakcija"
         not Flag(transactionId == $txId2, type == FlagType.NEMOGUCE_PUTOVANJE)
     then
         Flag flag = new Flag($clientId, $txId2, FlagType.NEMOGUCE_PUTOVANJE, $time2);
-        double dist = GeoUtil.distanceKm($lat1, $lon1, $lat2, $lon2);
-        flag.setDescription("Impossible travel: " + String.format("%.0f", dist)
-            + "km za " + ((($time2.getTime() - $time1.getTime()) / 60000)) + " min");
+        flag.setDescription(GeoUtil.buildTravelDescription(
+                $lat1, $lon1, $lat2, $lon2,
+                $time2.getTime() - $time1.getTime()));
         insert(flag);
         System.out.println("[CEP] " + flag);
 end
@@ -83,12 +78,7 @@ rule "CEP: Structuring (smurfing) - vise transakcija ispod AML praga"
             ) over window:time(48h),
             count($t)
         )
-        not Flag(
-            clientId == $clientId,
-            type == FlagType.STRUCTURING,
-            $t: timestamp,
-            eval(System.currentTimeMillis() - $t.getTime() < 3600000)
-        )
+        not Flag(clientId == $clientId, type == FlagType.STRUCTURING)
     then
         Flag flag = new Flag($clientId, $tx.getTransactionId(),
             FlagType.STRUCTURING, $time);
@@ -136,12 +126,7 @@ rule "CEP: Failed login burst - brute force"
             ) over window:time(5m),
             count($l)
         )
-        not Flag(
-            clientId == $clientId,
-            type == FlagType.BRUTE_FORCE_POKUSAJ,
-            $t: timestamp,
-            eval(System.currentTimeMillis() - $t.getTime() < 300000)
-        )
+        not Flag(clientId == $clientId, type == FlagType.BRUTE_FORCE_POKUSAJ)
     then
         Flag flag = new Flag($clientId, FlagType.BRUTE_FORCE_POKUSAJ, $time);
         flag.setDescription("5+ neuspesnih prijava u 5 minuta");
@@ -150,7 +135,7 @@ rule "CEP: Failed login burst - brute force"
 end
 
 // CEP 6: Suspicious login pattern
-// Failed login burst -> successful login sa novog uređaja
+// Failed login burst -> successful login sa novog uredjaja
 rule "CEP: Failed burst pracen uspesnom prijavom sa novog uredjaja"
     salience 130
     when
@@ -170,11 +155,7 @@ rule "CEP: Failed burst pracen uspesnom prijavom sa novog uredjaja"
             ),
             count($f)
         )
-        not SuspiciousLogin(
-            clientId == $clientId,
-            $susTs: timestamp,
-            eval(Math.abs($susTs.getTime() - $time.getTime()) < 60000)
-        )
+        not SuspiciousLogin(clientId == $clientId)
     then
         SuspiciousLogin susp = new SuspiciousLogin($clientId, $time,
             "Failed burst pracen uspesnom prijavom sa novog uredjaja");
@@ -212,11 +193,7 @@ rule "CEP: Impossible travel izmedju logina"
         )
         eval(GeoUtil.isImpossibleTravel($lat1, $lon1, $lat2, $lon2,
                                         $time2.getTime() - $time1.getTime()))
-        not SuspiciousLogin(
-            clientId == $clientId,
-            $susTs: timestamp,
-            eval(Math.abs($susTs.getTime() - $time2.getTime()) < 60000)
-        )
+        not SuspiciousLogin(clientId == $clientId)
     then
         SuspiciousLogin susp = new SuspiciousLogin($clientId, $time2,
             "Impossible travel izmedju logina");
@@ -224,8 +201,8 @@ rule "CEP: Impossible travel izmedju logina"
         insert(susp);
 
         Flag flag = new Flag($clientId, FlagType.NEMOGUCE_PUTOVANJE, $time2);
-        double dist = GeoUtil.distanceKm($lat1, $lon1, $lat2, $lon2);
-        flag.setDescription("Impossible travel u login-u: " + String.format("%.0f", dist) + "km");
+        flag.setDescription(GeoUtil.buildLoginTravelDescription(
+                $lat1, $lon1, $lat2, $lon2));
         insert(flag);
         System.out.println("[CEP] " + susp);
 end

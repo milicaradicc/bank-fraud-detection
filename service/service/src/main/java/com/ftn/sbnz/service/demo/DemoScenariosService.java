@@ -877,4 +877,229 @@ public class DemoScenariosService {
 
         return result;
     }
+
+    // =====================================================================
+// SCENARIO CEP: Svih 7 CEP pravila u jednoj sesiji
+//
+// Aktivira pravila:
+//   CEP 1: Velocity attack        - 5+ tx u 60s
+//   CEP 2: Impossible travel (tx) - Beograd -> Tokio za 20min
+//   CEP 3: Structuring            - 3+ tx ispod AML praga u 48h
+//   CEP 4: Burst nakon mirovanja  - 3+ tx u 24h posle 90+ dana neaktivnosti
+//   CEP 5: Brute force            - 5+ neuspesnih prijava u 5min
+//   CEP 6: Suspicious login       - failed burst + uspesna prijava sa novog uredjaja
+//   CEP 7: Impossible travel (lg) - Beograd -> Tokio za 30min (login)
+// =====================================================================
+    public ScenarioResult runAllCepScenario() {
+        ScenarioResult result = new ScenarioResult(
+                "CEP: Svih 7 CEP pravila",
+                "Jedan klijent prolazi kroz sve CEP scenarije: velocity attack, "
+                        + "impossible travel (transakcije i logini), structuring, "
+                        + "burst nakon mirovanja, brute force i suspicious login. "
+                        + "Demonstrira sva 7 CEP pravila sa sliding windows i temporalnim operatorima."
+        );
+
+        KieSession session = kieContainer.newKieSession("fraudPseudoSession");
+        SessionPseudoClock clock = session.getSessionClock();
+
+        try {
+            long t0 = System.currentTimeMillis();
+            clock.advanceTime(t0, TimeUnit.MILLISECONDS);
+
+            Client cepClient = new Client("CEP_ALL", "CEP Demo Klijent", 35,
+                    ClientSegment.REGULAR, LocalDate.now().minusYears(3),
+                    "RS", 5000.0, 500.0);
+            cepClient.getKnownDevices().add("Poznati-Uredjaj");
+            cepClient.setDaysInactiveBeforeReactivation(95);
+
+            session.insert(cepClient);
+            session.insert(defaultConfig());
+            session.fireAllRules();
+
+            // -----------------------------------------------------------------
+            // CEP 5: Brute force - 5 neuspesnih prijava u 5 minuta
+            // Sliding window: over window:time(5m)
+            // -----------------------------------------------------------------
+            result.addStep(formatTime(t0), "CEP 5 - BRUTE FORCE",
+                    "5 neuspesnih prijava za 2 min -> BRUTE_FORCE_POKUSAJ flag");
+
+            for (int i = 1; i <= 5; i++) {
+                LoginEvent failed = new LoginEvent("cep_fail_" + i,
+                        cepClient.getClientId(),
+                        new Date(t0 + (i - 1) * 25_000L),
+                        false, "Napadac-Uredjaj");
+                failed.setCountry("NL");
+                failed.setLatitude(52.3676);
+                failed.setLongitude(4.9041);
+                failed.setKnownDevice(false);
+                session.insert(failed);
+                if (i < 5) clock.advanceTime(25, TimeUnit.SECONDS);
+            }
+            session.fireAllRules();
+
+            // -----------------------------------------------------------------
+            // CEP 6: Suspicious login - uspesna prijava sa novog uredjaja
+            // Temporal operator: this before[0s, 10m] $success
+            // -----------------------------------------------------------------
+            clock.advanceTime(35, TimeUnit.SECONDS);
+            long tSuccess = t0 + 2 * 60_000L;
+            result.addStep(formatTime(tSuccess), "CEP 6 - SUSPICIOUS LOGIN",
+                    "Uspesna prijava sa novog uredjaja posle failed burst-a -> SUSPICIOUS_LOGIN");
+
+            LoginEvent successLogin = new LoginEvent("cep_success",
+                    cepClient.getClientId(), new Date(tSuccess),
+                    true, "Napadac-Uredjaj");
+            successLogin.setCountry("NL");
+            successLogin.setLatitude(52.3676);
+            successLogin.setLongitude(4.9041);
+            successLogin.setKnownDevice(false);
+            session.insert(successLogin);
+            session.fireAllRules();
+
+            // -----------------------------------------------------------------
+            // CEP 7: Impossible travel (login) - Beograd -> Tokio za 30min
+            // Temporal operator: this before[0s, 6h] $l2
+            // -----------------------------------------------------------------
+            clock.advanceTime(28, TimeUnit.MINUTES);
+            long tLoginBg = t0 + 30 * 60_000L;
+            result.addStep(formatTime(tLoginBg), "CEP 7 - IMPOSSIBLE TRAVEL (LOGIN)",
+                    "Login iz Beograda, zatim Tokio za 30min -> 9180km nemoguce");
+
+            LoginEvent loginBg = new LoginEvent("cep_login_bg",
+                    cepClient.getClientId(), new Date(tLoginBg),
+                    true, "Poznati-Uredjaj");
+            loginBg.setCountry("RS");
+            loginBg.setLatitude(44.7866);
+            loginBg.setLongitude(20.4489);
+            loginBg.setKnownDevice(true);
+            session.insert(loginBg);
+            session.fireAllRules();
+
+            clock.advanceTime(30, TimeUnit.MINUTES);
+            long tLoginTokyo = t0 + 60 * 60_000L;
+
+            LoginEvent loginTokyo = new LoginEvent("cep_login_tokyo",
+                    cepClient.getClientId(), new Date(tLoginTokyo),
+                    true, "Napadac-Uredjaj");
+            loginTokyo.setCountry("JP");
+            loginTokyo.setLatitude(35.6762);
+            loginTokyo.setLongitude(139.6503);
+            loginTokyo.setKnownDevice(false);
+            session.insert(loginTokyo);
+            session.fireAllRules();
+
+            // -----------------------------------------------------------------
+            // CEP 1: Velocity attack - 5+ transakcija u 60 sekundi
+            // Sliding window: over window:time(60s)
+            // -----------------------------------------------------------------
+            clock.advanceTime(5, TimeUnit.MINUTES);
+            long tVelocity = t0 + 65 * 60_000L;
+            result.addStep(formatTime(tVelocity), "CEP 1 - VELOCITY ATTACK",
+                    "7 transakcija za 50s -> VELOCITY_ATTACK flag");
+
+            for (int i = 1; i <= 7; i++) {
+                long ti = tVelocity + (i - 1) * 7_000L;
+                Transaction tx = new Transaction("cep_vel_" + i,
+                        cepClient.getClientId(), 1.0 + i,
+                        new Date(ti), TransactionChannel.ONLINE);
+                tx.setCurrency("EUR");
+                tx.setDeviceId("Napadac-Uredjaj");
+                tx.setCountry("RS");
+                tx.setLatitude(44.7866);
+                tx.setLongitude(20.4489);
+                tx.setInflow(false);
+                session.insert(tx);
+                if (i < 7) clock.advanceTime(7, TimeUnit.SECONDS);
+            }
+            session.fireAllRules();
+
+            // -----------------------------------------------------------------
+            // CEP 2: Impossible travel (transakcije) - Beograd -> Tokio za 20min
+            // Temporal operator: this before[0s, 6h] $tx2
+            // -----------------------------------------------------------------
+            clock.advanceTime(13, TimeUnit.MINUTES);
+            long tTxBg = t0 + 79 * 60_000L;
+            result.addStep(formatTime(tTxBg), "CEP 2 - IMPOSSIBLE TRAVEL (TX)",
+                    "Transakcija Beograd, zatim Tokio za 20min -> nemoguce putovanje");
+
+            Transaction txBg = new Transaction("cep_tx_bg",
+                    cepClient.getClientId(), 100.0,
+                    new Date(tTxBg), TransactionChannel.POS);
+            txBg.setCountry("RS");
+            txBg.setLatitude(44.7866);
+            txBg.setLongitude(20.4489);
+            txBg.setDeviceId("Poznati-Uredjaj");
+            txBg.setInflow(false);
+            session.insert(txBg);
+            session.fireAllRules();
+
+            clock.advanceTime(20, TimeUnit.MINUTES);
+            long tTxTokyo = t0 + 99 * 60_000L;
+
+            Transaction txTokyo = new Transaction("cep_tx_tokyo",
+                    cepClient.getClientId(), 800.0,
+                    new Date(tTxTokyo), TransactionChannel.POS);
+            txTokyo.setCountry("JP");
+            txTokyo.setLatitude(35.6762);
+            txTokyo.setLongitude(139.6503);
+            txTokyo.setDeviceId("Napadac-Uredjaj");
+            txTokyo.setInflow(false);
+            session.insert(txTokyo);
+            session.fireAllRules();
+
+            // -----------------------------------------------------------------
+            // CEP 4: Burst nakon mirovanja - 3+ tx u 24h posle 90+ dana neaktivnosti
+            // Sliding window: over window:time(24h)
+            // -----------------------------------------------------------------
+            clock.advanceTime(10, TimeUnit.MINUTES);
+            long tBurst = t0 + 109 * 60_000L;
+            result.addStep(formatTime(tBurst), "CEP 4 - BURST NAKON MIROVANJA",
+                    "3+ transakcija u 24h posle 95 dana neaktivnosti -> BURST_NAKON_MIROVANJA");
+
+            for (int i = 1; i <= 3; i++) {
+                long ti = tBurst + (i - 1) * 5 * 60_000L;
+                Transaction tx = new Transaction("cep_burst_" + i,
+                        cepClient.getClientId(), 200.0 * i,
+                        new Date(ti), TransactionChannel.TRANSFER);
+                tx.setCurrency("EUR");
+                tx.setRecipientId("primalac_burst_" + i);
+                tx.setDeviceId("Poznati-Uredjaj");
+                tx.setCountry("RS");
+                tx.setInflow(false);
+                session.insert(tx);
+                if (i < 3) clock.advanceTime(5, TimeUnit.MINUTES);
+            }
+            session.fireAllRules();
+
+            // -----------------------------------------------------------------
+            // CEP 3: Structuring - 3+ transakcija ispod AML praga u 48h
+            // Sliding window: over window:time(48h)
+            // -----------------------------------------------------------------
+            clock.advanceTime(1, TimeUnit.HOURS);
+            long tStruct = t0 + 170 * 60_000L;
+            result.addStep(formatTime(tStruct), "CEP 3 - STRUCTURING",
+                    "3 transakcije ~14000 EUR (ispod AML praga 15000) u 48h -> STRUCTURING");
+
+            double[] amounts = {14000.0, 14500.0, 13900.0};
+            for (int i = 0; i < amounts.length; i++) {
+                long ti = tStruct + i * 2 * 3600_000L;
+                if (i > 0) clock.advanceTime(2, TimeUnit.HOURS);
+
+                Transaction tx = new Transaction("cep_struct_" + (i + 1),
+                        cepClient.getClientId(), amounts[i],
+                        new Date(ti), TransactionChannel.TRANSFER);
+                tx.setCurrency("EUR");
+                tx.setRecipientId("struct_primalac_" + (i + 1));
+                tx.setDeviceId("Poznati-Uredjaj");
+                tx.setCountry("RS");
+                tx.setInflow(false);
+                session.insert(tx);
+            }
+            session.fireAllRules();
+
+            return finalizeResult(result, session, cepClient.getClientId(), "cep_struct_3");
+        } finally {
+            session.dispose();
+        }
+    }
 }

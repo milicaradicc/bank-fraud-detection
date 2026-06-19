@@ -1,14 +1,20 @@
 package com.ftn.sbnz.model.facts;
 
 import com.ftn.sbnz.model.enums.FlagType;
+import org.kie.api.definition.type.Expires;
+import org.kie.api.definition.type.Role;
+import org.kie.api.definition.type.Timestamp;
 
 import java.util.Date;
 import java.util.Objects;
 
+@Role(Role.Type.EVENT)
+@Timestamp("timestamp")
+@Expires("49h")
 public class Flag {
 
     private String clientId;
-    private String transactionId; // null ako je flag vezan samo za klijenta (npr. CEP burst)
+    private String transactionId;
     private FlagType type;
     private int weight;
     private Date timestamp;
