@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type ClientSegment = 'VIP' | 'REGULAR' | 'YOUNG' | 'PENSIONER';
@@ -84,7 +85,7 @@ export interface Stats {
 @Injectable({ providedIn: 'root' })
 export class FraudDataService {
 
-  private readonly API = 'http://localhost:8080/api';
+  private readonly API = environment.apiBaseUrl;
 
   constructor(private http: HttpClient) {}
 

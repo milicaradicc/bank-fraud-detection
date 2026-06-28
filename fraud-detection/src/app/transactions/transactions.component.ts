@@ -3,6 +3,7 @@ import { FraudDataService, Transaction } from '../services/fraud-data.service';
 import { AuthService } from '../services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { DeviceFingerprintService } from '../services/device-fingerprint.service';
+import { environment } from '../../environments/environment';
 
 export interface TransactionResult {
   transactionId: string;
@@ -31,6 +32,7 @@ export class TransactionsComponent implements OnInit {
   showForm = false;
   result: TransactionResult | null = null;
   isClient = false;
+  private readonly API = environment.apiBaseUrl;
 
   stepUpCode = '';
   stepUpStatus: 'idle' | 'confirming' | 'success' | 'error' = 'idle';
@@ -64,8 +66,8 @@ export class TransactionsComponent implements OnInit {
 
   loadTransactions() {
     const endpoint = this.isClient
-      ? 'http://localhost:8080/api/transactions/my'
-      : 'http://localhost:8080/api/transactions';
+      ? `${this.API}/transactions/my`
+      : `${this.API}/transactions`;
 
     this.http.get<Transaction[]>(endpoint).subscribe(data => {
       this.transactions = data;
@@ -88,7 +90,7 @@ export class TransactionsComponent implements OnInit {
     this.stepUpCode = '';
 
     this.http.post<TransactionResult>(
-      'http://localhost:8080/api/transactions', this.newTx
+      `${this.API}/transactions`, this.newTx
     ).subscribe({
       next: res => {
         this.result = res;
@@ -104,7 +106,7 @@ export class TransactionsComponent implements OnInit {
     this.stepUpStatus = 'confirming';
 
     this.http.post<{ confirmed: boolean; message: string }>(
-      `http://localhost:8080/api/transactions/${this.result.transactionId}/confirm`,
+      `${this.API}/transactions/${this.result.transactionId}/confirm`,
       { code: this.stepUpCode }
     ).subscribe({
       next: res => {

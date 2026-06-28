@@ -1,0 +1,97 @@
+package rules.templates;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.RiskScore;
+import com.ftn.sbnz.model.enums.ClientSegment;
+import com.ftn.sbnz.model.enums.RiskLevel;
+
+rule "Risk Thresholds_2"
+salience 48
+no-loop true
+when
+    $client: Client(segment == ClientSegment.VIP)
+    $rs: RiskScore(clientId == $client.clientId, $score: score)
+then
+    RiskLevel newLevel;
+    if ($score >= 90) {
+        newLevel = RiskLevel.CRITICAL;
+    } else if ($score >= 70) {
+        newLevel = RiskLevel.HIGH;
+    } else if ($score >= 35) {
+        newLevel = RiskLevel.MEDIUM;
+    } else {
+        newLevel = RiskLevel.LOW;
+    }
+    if (newLevel != $rs.getLevel()) {
+        modify($rs) { setLevel(newLevel) }
+        System.out.println("[TEMPLATE] Segment VIP prag primenjen: " + $score + " -> " + newLevel);
+    }
+end
+
+rule "Risk Thresholds_3"
+salience 48
+no-loop true
+when
+    $client: Client(segment == ClientSegment.REGULAR)
+    $rs: RiskScore(clientId == $client.clientId, $score: score)
+then
+    RiskLevel newLevel;
+    if ($score >= 85) {
+        newLevel = RiskLevel.CRITICAL;
+    } else if ($score >= 60) {
+        newLevel = RiskLevel.HIGH;
+    } else if ($score >= 30) {
+        newLevel = RiskLevel.MEDIUM;
+    } else {
+        newLevel = RiskLevel.LOW;
+    }
+    if (newLevel != $rs.getLevel()) {
+        modify($rs) { setLevel(newLevel) }
+        System.out.println("[TEMPLATE] Segment REGULAR prag primenjen: " + $score + " -> " + newLevel);
+    }
+end
+
+rule "Risk Thresholds_4"
+salience 48
+no-loop true
+when
+    $client: Client(segment == ClientSegment.YOUNG)
+    $rs: RiskScore(clientId == $client.clientId, $score: score)
+then
+    RiskLevel newLevel;
+    if ($score >= 80) {
+        newLevel = RiskLevel.CRITICAL;
+    } else if ($score >= 50) {
+        newLevel = RiskLevel.HIGH;
+    } else if ($score >= 25) {
+        newLevel = RiskLevel.MEDIUM;
+    } else {
+        newLevel = RiskLevel.LOW;
+    }
+    if (newLevel != $rs.getLevel()) {
+        modify($rs) { setLevel(newLevel) }
+        System.out.println("[TEMPLATE] Segment YOUNG prag primenjen: " + $score + " -> " + newLevel);
+    }
+end
+
+rule "Risk Thresholds_5"
+salience 48
+no-loop true
+when
+    $client: Client(segment == ClientSegment.PENSIONER)
+    $rs: RiskScore(clientId == $client.clientId, $score: score)
+then
+    RiskLevel newLevel;
+    if ($score >= 80) {
+        newLevel = RiskLevel.CRITICAL;
+    } else if ($score >= 50) {
+        newLevel = RiskLevel.HIGH;
+    } else if ($score >= 25) {
+        newLevel = RiskLevel.MEDIUM;
+    } else {
+        newLevel = RiskLevel.LOW;
+    }
+    if (newLevel != $rs.getLevel()) {
+        modify($rs) { setLevel(newLevel) }
+        System.out.println("[TEMPLATE] Segment PENSIONER prag primenjen: " + $score + " -> " + newLevel);
+    }
+end

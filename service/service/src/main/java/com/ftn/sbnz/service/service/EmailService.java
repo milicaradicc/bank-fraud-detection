@@ -18,6 +18,11 @@ public class EmailService {
     }
 
     public void sendVerificationCode(String toEmail, String code, double amount, String txId) {
+        if (fromAddress == null || fromAddress.isBlank()) {
+            System.out.println("[STEP-UP] Email nije konfigurisan. Kod za " + txId + ": " + code);
+            return;
+        }
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromAddress);
         message.setTo(toEmail);

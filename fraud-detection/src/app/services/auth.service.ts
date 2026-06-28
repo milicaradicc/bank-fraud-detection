@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 export type UserRole = 'ADMIN' | 'ANALYST' | 'CLIENT';
 
@@ -13,7 +14,7 @@ export interface AuthUser {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  private readonly API = 'http://localhost:8080/api/auth';
+  private readonly API = `${environment.apiBaseUrl}/auth`;
   private readonly TOKEN_KEY = 'fg_token';
 
   constructor(private http: HttpClient, private router: Router) {}

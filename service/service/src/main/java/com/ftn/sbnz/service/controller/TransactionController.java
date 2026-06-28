@@ -46,6 +46,11 @@ public class TransactionController {
         return transactionService.getTransactionsByClient(clientId);
     }
 
+    @GetMapping("/client/{clientId}")
+    public List<Transaction> getTransactionsByClient(@PathVariable String clientId) {
+        return transactionService.getTransactionsByClient(clientId);
+    }
+
     @PostMapping
     public ResponseEntity<TransactionResponse> processTransaction(
             @RequestBody TransactionRequest request,

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FraudDataService, Client } from '../services/fraud-data.service';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 export interface EvidenceItem {
   flagType: string;
@@ -33,7 +34,7 @@ export class DiagnosticComponent implements OnInit {
   running = false;
   error = '';
 
-  private readonly API = 'http://localhost:8080/api/diagnostic';
+  private readonly API = `${environment.apiBaseUrl}/diagnostic`;
 
   constructor(private fraudData: FraudDataService, private http: HttpClient) {}
 

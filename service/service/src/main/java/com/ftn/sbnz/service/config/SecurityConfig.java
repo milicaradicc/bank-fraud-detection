@@ -28,19 +28,18 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()       // za razvoj
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/v1/demo/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/alerts/**").hasAnyRole("ADMIN", "ANALYST")
                         .requestMatchers("/api/diagnostic/**").hasAnyRole("ADMIN", "ANALYST")
-                        .requestMatchers("/api/transactions/**").hasAnyRole("ADMIN", "ANALYST", "CLIENT")
-                        .requestMatchers(HttpMethod.POST, "/api/transactions/**").hasAnyRole("ADMIN", "ANALYST")
                         .requestMatchers("/api/transactions/my").hasRole("CLIENT")
-                        .requestMatchers("/api/v1/demo/**").permitAll()
-                        .requestMatchers("/api/diagnostic/**").hasAnyRole("ADMIN", "ANALYST")
+                        .requestMatchers("/api/transactions/**").hasAnyRole("ADMIN", "ANALYST", "CLIENT")
                         .anyRequest().authenticated()
                 )
-                .headers(h -> h.frameOptions(f -> f.disable())) // za H2 konzolu
+                .headers(h -> h.frameOptions(f -> f.disable()))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

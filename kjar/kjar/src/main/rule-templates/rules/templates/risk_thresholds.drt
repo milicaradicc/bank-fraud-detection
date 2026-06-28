@@ -1,0 +1,40 @@
+template header
+segment
+alertCut
+blockCut
+freezeCut
+
+package rules.templates;
+
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.RiskScore;
+import com.ftn.sbnz.model.enums.ClientSegment;
+import com.ftn.sbnz.model.enums.RiskLevel;
+
+template "risk-thresholds-rules"
+
+rule "Risk Thresholds_@{row.rowNumber}"
+salience 48
+no-loop true
+when
+    $client: Client(segment == ClientSegment.@{segment})
+    $rs: RiskScore(clientId == $client.clientId, $score: score)
+then
+    RiskLevel newLevel;
+    if ($score >= @{freezeCut}) {
+        newLevel = RiskLevel.CRITICAL;
+    } else if ($score >= @{blockCut}) {
+        newLevel = RiskLevel.HIGH;
+    } else if ($score >= @{alertCut}) {
+        newLevel = RiskLevel.MEDIUM;
+    } else {
+        newLevel = RiskLevel.LOW;
+    }
+
+    if (newLevel != $rs.getLevel()) {
+        modify($rs) { setLevel(newLevel) }
+        System.out.println("[TEMPLATE] Segment @{segment} prag primenjen: " + $score + " -> " + newLevel);
+    }
+end
+
+end template

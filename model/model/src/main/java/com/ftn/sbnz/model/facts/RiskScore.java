@@ -50,7 +50,6 @@ public class RiskScore {
 
     public RiskLevel getLevel() { return level; }
     public void setLevel(RiskLevel level) { this.level = level; }
-
     public Date getTimestamp() { return timestamp; }
     public void setTimestamp(Date timestamp) { this.timestamp = timestamp; }
 
@@ -68,4 +67,5 @@ public class RiskScore {
         return "RiskScore{client=" + clientId + ", score=" + score +
                 ", level=" + level + ", multiplier=" + appliedMultiplier + "}";
     }
+
 }
