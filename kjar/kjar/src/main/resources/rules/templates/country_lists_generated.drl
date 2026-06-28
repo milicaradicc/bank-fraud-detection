@@ -1,0 +1,387 @@
+package rules.templates;
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.enums.FlagType;
+import com.ftn.sbnz.model.enums.TransactionChannel;
+import java.util.Date;
+
+rule "Country Origin_2"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "KP",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (crna lista): KP, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin KP (crna): " + flag);
+end
+rule "Country Recipient_2"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "KP",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (crna lista): KP, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient KP (crna): " + flag);
+end
+
+rule "Country Origin_3"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "IR",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (crna lista): IR, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin IR (crna): " + flag);
+end
+rule "Country Recipient_3"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "IR",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (crna lista): IR, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient IR (crna): " + flag);
+end
+
+rule "Country Origin_4"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "MM",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (crna lista): MM, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin MM (crna): " + flag);
+end
+rule "Country Recipient_4"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "MM",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (crna lista): MM, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient MM (crna): " + flag);
+end
+
+rule "Country Origin_5"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "SY",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (crna lista): SY, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin SY (crna): " + flag);
+end
+rule "Country Recipient_5"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "SY",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (crna lista): SY, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient SY (crna): " + flag);
+end
+
+rule "Country Origin_6"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "CU",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (crna lista): CU, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin CU (crna): " + flag);
+end
+rule "Country Recipient_6"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "CU",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (crna lista): CU, tezina 40");
+    flag.setWeight(40);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient CU (crna): " + flag);
+end
+
+rule "Country Origin_7"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "PA",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (siva lista): PA, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin PA (siva): " + flag);
+end
+rule "Country Recipient_7"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "PA",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (siva lista): PA, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient PA (siva): " + flag);
+end
+
+rule "Country Origin_8"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "KY",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (siva lista): KY, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin KY (siva): " + flag);
+end
+rule "Country Recipient_8"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "KY",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (siva lista): KY, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient KY (siva): " + flag);
+end
+
+rule "Country Origin_9"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "AE",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (siva lista): AE, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin AE (siva): " + flag);
+end
+rule "Country Recipient_9"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "AE",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (siva lista): AE, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient AE (siva): " + flag);
+end
+
+rule "Country Origin_10"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "MT",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (siva lista): MT, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin MT (siva): " + flag);
+end
+rule "Country Recipient_10"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "MT",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (siva lista): MT, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient MT (siva): " + flag);
+end
+
+rule "Country Origin_11"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "CY",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (siva lista): CY, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin CY (siva): " + flag);
+end
+rule "Country Recipient_11"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "CY",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (siva lista): CY, tezina 15");
+    flag.setWeight(15);
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient CY (siva): " + flag);
+end

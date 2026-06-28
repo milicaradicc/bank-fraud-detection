@@ -1,0 +1,36 @@
+template header
+mcc
+category
+weight
+
+package rules.templates;
+
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.enums.FlagType;
+
+import java.util.Date;
+
+template "mcc-risk-rules"
+
+rule "MCC Risk_@{row.rowNumber}"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        mccCode == @{mcc},
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_MERCHANT)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_MERCHANT, $time,
+        "@{category} (MCC @{mcc}), tezina @{weight}");
+    flag.setWeight(@{weight});
+    insert(flag);
+    System.out.println("[TEMPLATE-MCC] " + flag + " kategorija: @{category}");
+end
+
+end template

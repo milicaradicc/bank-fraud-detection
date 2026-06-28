@@ -68,26 +68,6 @@ rule "L1: Transakcija iz rizicne zemlje"
         System.out.println("[L1] " + flag);
 end
 
-rule "L1: Transakcija ka rizicnom merchant-u"
-    salience 100
-    when
-        $config: ConfigList()
-        $tx: Transaction(
-            $clientId: clientId,
-            $txId: transactionId,
-            $mcc: mccCode > 0,
-            $time: timestamp
-        )
-        eval($config.isMccHighRisk($mcc))
-        Client(clientId == $clientId)
-        not Flag(transactionId == $txId, type == FlagType.RIZICAN_MERCHANT)
-    then
-        Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_MERCHANT, $time,
-            "High-risk merchant MCC: " + $mcc);
-        insert(flag);
-        System.out.println("[L1] " + flag);
-end
-
 rule "L1: Transakcija sa nepoznatog uredjaja"
     salience 100
     when

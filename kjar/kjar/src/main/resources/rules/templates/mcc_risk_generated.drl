@@ -1,0 +1,101 @@
+package rules.templates;
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.enums.FlagType;
+import java.util.Date;
+
+rule "MCC Risk_2"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        mccCode == 7995,
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_MERCHANT)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_MERCHANT, $time,
+        "Kockanje / kladjenje (MCC 7995), tezina 25");
+    flag.setWeight(25);
+    insert(flag);
+    System.out.println("[TEMPLATE-MCC] " + flag + " kategorija: Kockanje / kladjenje");
+end
+
+rule "MCC Risk_3"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        mccCode == 6051,
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_MERCHANT)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_MERCHANT, $time,
+        "Kripto-menjacnice (MCC 6051), tezina 25");
+    flag.setWeight(25);
+    insert(flag);
+    System.out.println("[TEMPLATE-MCC] " + flag + " kategorija: Kripto-menjacnice");
+end
+
+rule "MCC Risk_4"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        mccCode == 6050,
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_MERCHANT)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_MERCHANT, $time,
+        "Quasi cash (MCC 6050), tezina 20");
+    flag.setWeight(20);
+    insert(flag);
+    System.out.println("[TEMPLATE-MCC] " + flag + " kategorija: Quasi cash");
+end
+
+rule "MCC Risk_5"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        mccCode == 6540,
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_MERCHANT)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_MERCHANT, $time,
+        "Prepaid kartice (MCC 6540), tezina 20");
+    flag.setWeight(20);
+    insert(flag);
+    System.out.println("[TEMPLATE-MCC] " + flag + " kategorija: Prepaid kartice");
+end
+
+rule "MCC Risk_6"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        mccCode == 4829,
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_MERCHANT)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_MERCHANT, $time,
+        "Novcani transferi (MCC 4829), tezina 20");
+    flag.setWeight(20);
+    insert(flag);
+    System.out.println("[TEMPLATE-MCC] " + flag + " kategorija: Novcani transferi");
+end

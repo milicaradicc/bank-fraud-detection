@@ -1,0 +1,57 @@
+template header
+countryCode
+listType
+weight
+
+package rules.templates;
+
+import com.ftn.sbnz.model.events.Transaction;
+import com.ftn.sbnz.model.facts.Client;
+import com.ftn.sbnz.model.facts.Flag;
+import com.ftn.sbnz.model.enums.FlagType;
+import com.ftn.sbnz.model.enums.TransactionChannel;
+
+import java.util.Date;
+
+template "country-lists-rules"
+
+rule "Country Origin_@{row.rowNumber}"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        country == "@{countryCode}",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICNA_LOKACIJA)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICNA_LOKACIJA, $time,
+        "Transakcija iz zemlje (@{listType} lista): @{countryCode}, tezina @{weight}");
+    flag.setWeight(@{weight});
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Origin @{countryCode} (@{listType}): " + flag);
+end
+
+rule "Country Recipient_@{row.rowNumber}"
+salience 100
+when
+    $tx: Transaction(
+        $clientId: clientId,
+        $txId: transactionId,
+        channel == TransactionChannel.TRANSFER,
+        recipientCountry == "@{countryCode}",
+        $time: timestamp
+    )
+    Client(clientId == $clientId)
+    not Flag(transactionId == $txId, type == FlagType.RIZICAN_PRIMALAC)
+then
+    Flag flag = new Flag($clientId, $txId, FlagType.RIZICAN_PRIMALAC, $time,
+        "Primalac u zemlji (@{listType} lista): @{countryCode}, tezina @{weight}");
+    flag.setWeight(@{weight});
+    insert(flag);
+    System.out.println("[TEMPLATE-COUNTRY] Recipient @{countryCode} (@{listType}): " + flag);
+end
+
+end template
