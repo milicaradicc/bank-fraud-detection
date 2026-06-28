@@ -17,15 +17,15 @@
     </div>
 
     <ul class="nav-links">
-      <li><a routerLink="/dashboard" routerLinkActive="active">
-        <span class="nav-icon">⊞</span> Dashboard
-      </a></li>
       <li><a routerLink="/transactions" routerLinkActive="active">
         <span class="nav-icon">↔</span> Transakcije
       </a></li>
 
       <!-- Samo ADMIN i ANALYST vide ove stavke -->
       <ng-container *ngIf="authService.hasRole('ADMIN', 'ANALYST')">
+        <li><a routerLink="/dashboard" routerLinkActive="active">
+          <span class="nav-icon">⊞</span> Dashboard
+        </a></li>
         <li><a routerLink="/alerts" routerLinkActive="active">
           <span class="nav-icon">◎</span> Upozorenja
           <span class="badge" *ngIf="alertCount > 0">{{alertCount}}</span>

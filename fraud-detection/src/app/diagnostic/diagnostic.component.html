@@ -9,8 +9,9 @@
       <div class="form-group">
         <label>Hipoteza</label>
         <select [(ngModel)]="selectedHypothesis">
-          <option value="account_takeover">accountTakeover(acc)</option>
+          <option value="account_takeover">accountTakeover(acc) — Account Takeover</option>
           <option value="app_scam">appScam(acc) — APP Scam</option>
+          <option value="money_mule">reaches(from, to) — Money Mule</option>
         </select>
       </div>
 
@@ -63,6 +64,7 @@
 
     <p class="text-secondary" style="margin: 10px 0">{{result.explanation}}</p>
 
+    <!-- Evidence tree za account takeover / app scam (flagovi) -->
     <div class="evidence-tree" *ngIf="result.confirmed && result.evidenceChain.length > 0">
       <div class="tree-label mono text-muted">// Hronološki tok dokaza koji su doveli do potvrde</div>
       <div class="evidence-chain" style="margin-top: 12px">
@@ -76,6 +78,34 @@
               <span class="node-type" [class.critical]="e.critical">{{e.critical ? 'kritičan' : 'standardni'}}</span>
             </div>
             <div class="node-detail text-secondary">{{e.description}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lanac naloga za money mule (reaches rezultat) -->
+    <div class="evidence-tree" *ngIf="result.confirmed && result.muleNetwork && result.muleNetwork.length > 0">
+      <div class="tree-label mono text-muted">// Lanac prosleđivanja novca (reaches rekurzija)</div>
+      <div class="evidence-chain" style="margin-top: 12px">
+        <div class="evidence-node confirmed">
+          <div class="node-content">
+            <div class="node-header">
+              <span class="node-icon">●</span>
+              <span class="node-label mono">{{result.clientId}}</span>
+              <span class="node-type">izvor</span>
+            </div>
+            <div class="node-detail text-secondary">Polazni nalog — izvor lanca prosleđivanja</div>
+          </div>
+        </div>
+        <div class="evidence-node confirmed" *ngFor="let acc of result.muleNetwork; let i = index">
+          <div class="node-connector"></div>
+          <div class="node-content">
+            <div class="node-header">
+              <span class="node-icon">→</span>
+              <span class="node-label mono">{{acc}}</span>
+              <span class="node-type">posrednik {{i + 1}}</span>
+            </div>
+            <div class="node-detail text-secondary">Novac stiže do ovog naloga kroz lanac transfera</div>
           </div>
         </div>
       </div>

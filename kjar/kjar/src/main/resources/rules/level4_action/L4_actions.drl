@@ -166,6 +166,7 @@ rule "L4: Watchlist klijent - eskaliraj srednji rizik"
             $score: score
         )
         $client: Client(clientId == $clientId, onWatchlist == true)
+        not Alert(clientId == $clientId, transactionId == $txId)
     then
         modify($rs) {
             setScore(Math.max($score, 65.0))

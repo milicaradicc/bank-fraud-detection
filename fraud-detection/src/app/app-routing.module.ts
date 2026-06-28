@@ -11,11 +11,12 @@ import { DiagnosticComponent } from './diagnostic/diagnostic.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: '/transactions', pathMatch: 'full' },
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['ADMIN', 'ANALYST'] }
   },
   {
     path: 'transactions',

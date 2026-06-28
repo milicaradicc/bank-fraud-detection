@@ -17,6 +17,7 @@ export interface DiagnosticResult {
   evidenceChain: EvidenceItem[];
   explanation: string;
   timestamp: string;
+  muleNetwork?: string[];   // lanac naloga za money mule
 }
 
 @Component({
@@ -59,6 +60,12 @@ export class DiagnosticComponent implements OnInit {
     this.error = '';
     this.result = null;
 
+    // Money mule ide na poseban endpoint (vraca listu naloga, ne flagove)
+    if (this.selectedHypothesis === 'money_mule') {
+      this.runMoneyMule(clientId);
+      return;
+    }
+
     const endpoint = this.selectedHypothesis === 'account_takeover'
       ? `${this.API}/account-takeover/${clientId}`
       : `${this.API}/app-scam/${clientId}`;
@@ -82,8 +89,35 @@ export class DiagnosticComponent implements OnInit {
     });
   }
 
+  private runMoneyMule(clientId: string) {
+    const endpoint = `${this.API}/money-mule/network/${clientId}`;
+    this.http.get<string[]>(endpoint).subscribe({
+      next: network => {
+        const confirmed = network && network.length > 0;
+        this.result = {
+          hypothesis: 'MONEY_MULE',
+          clientId: clientId,
+          confirmed: confirmed,
+          evidenceChain: [],
+          muleNetwork: network || [],
+          explanation: confirmed
+            ? `Rekurzivni upit reaches() je pronašao lanac prosleđivanja novca. Novac sa naloga ${clientId} stiže do ${network.length} posrednika kroz proizvoljno mnogo koraka.`
+            : `Rekurzivni upit reaches() nije pronašao nijedan lanac prosleđivanja sa naloga ${clientId}. Klijent nije izvor money mule mreže.`,
+          timestamp: new Date().toLocaleTimeString('sr')
+        };
+        this.running = false;
+      },
+      error: () => {
+        this.error = 'Greška pri pozivu money mule dijagnostike. Proveri da li klijent postoji.';
+        this.running = false;
+      }
+    });
+  }
+
   getQueryName() {
-    return this.selectedHypothesis === 'account_takeover' ? 'accountTakeover' : 'appScam';
+    if (this.selectedHypothesis === 'account_takeover') return 'accountTakeover';
+    if (this.selectedHypothesis === 'money_mule') return 'reaches';
+    return 'appScam';
   }
 
   getQueryCode() {
@@ -101,6 +135,16 @@ query accountTakeover(String acc)
     Flag(clientId == acc, type == FlagType.ABNORMALNO_VISOKA)
 end`;
     }
+    if (this.selectedHypothesis === 'money_mule') {
+      return `query reaches(String from, String to)
+    // baza rekurzije: direktan odliv
+    Transaction(clientId == from, recipientId == to, inflow == false)
+    or
+    // rekurzivni korak: preko medjucvora $z
+    ( Transaction(clientId == from, $z : recipientId, inflow == false)
+      and reaches($z, to;) )
+end`;
+    }
     return `query appScam(String acc)
     Flag(clientId == acc, type == FlagType.PRVI_TRANSFER_KA_PRIMAOCU)
     Flag(clientId == acc, type == FlagType.ABNORMALNO_VISOKA)
@@ -112,7 +156,8 @@ end`;
   getHypothesisLabel(h: string) {
     const map: Record<string, string> = {
       'ACCOUNT_TAKEOVER': 'Account Takeover',
-      'APP_SCAM': 'APP Scam'
+      'APP_SCAM': 'APP Scam',
+      'MONEY_MULE': 'Money Mule'
     };
     return map[h] || h;
   }
@@ -123,6 +168,9 @@ end`;
     }
     if (h === 'APP_SCAM') {
       return 'Pokrenite cooling-off mehanizam — odložite transfer 24h i kontaktirajte klijenta da proverite da li je pod uticajem prevare.';
+    }
+    if (h === 'MONEY_MULE') {
+      return 'Prijavite slučaj AML službi, zamrznite naloge u lancu prosleđivanja i pokrenite istragu nad celom mrežom posrednika.';
     }
     return 'Pregledajte slučaj ručno.';
   }
