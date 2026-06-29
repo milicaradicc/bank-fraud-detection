@@ -1,9 +1,5 @@
 package rules.level2_aggregation;
 
-// or u posebna pravila
-// modify ne update
-// logika u gore
-
 import com.ftn.sbnz.model.events.Transaction;
 import com.ftn.sbnz.model.events.AccountChange;
 import com.ftn.sbnz.model.events.SuspiciousLogin;
@@ -92,7 +88,10 @@ rule "L2: Pass-through aktivnost"
         System.out.println("[L2] " + flag);
 end
 
-rule "L2: Sumnjiva aktivacija dugo neaktivnog naloga"
+// Sumnjiva aktivacija dugo neaktivnog naloga
+// Razdvojeno iz jednog pravila sa OR na tri zasebna pravila
+
+rule "L2: Sumnjiva aktivacija - abnormalno visoka"
     salience 95
     when
         $client: Client(
@@ -100,13 +99,45 @@ rule "L2: Sumnjiva aktivacija dugo neaktivnog naloga"
             daysInactiveBeforeReactivation >= 90
         )
         $tx: Transaction(clientId == $clientId, $time: timestamp)
-        (
-            Flag(clientId == $clientId, type == FlagType.ABNORMALNO_VISOKA)
-            or
-            Flag(clientId == $clientId, type == FlagType.NEPOZNAT_UREDJAJ)
-            or
-            Flag(clientId == $clientId, type == FlagType.RIZICNA_LOKACIJA)
+        Flag(clientId == $clientId, type == FlagType.ABNORMALNO_VISOKA)
+        not Flag(clientId == $clientId, type == FlagType.SUMNJIVA_AKTIVACIJA)
+    then
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.SUMNJIVA_AKTIVACIJA, $time);
+        flag.setDescription("Aktivacija naloga posle "
+            + $client.getDaysInactiveBeforeReactivation() + " dana mirovanja");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Sumnjiva aktivacija - nepoznat uredjaj"
+    salience 95
+    when
+        $client: Client(
+            $clientId: clientId,
+            daysInactiveBeforeReactivation >= 90
         )
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        Flag(clientId == $clientId, type == FlagType.NEPOZNAT_UREDJAJ)
+        not Flag(clientId == $clientId, type == FlagType.SUMNJIVA_AKTIVACIJA)
+    then
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.SUMNJIVA_AKTIVACIJA, $time);
+        flag.setDescription("Aktivacija naloga posle "
+            + $client.getDaysInactiveBeforeReactivation() + " dana mirovanja");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Sumnjiva aktivacija - rizicna lokacija"
+    salience 95
+    when
+        $client: Client(
+            $clientId: clientId,
+            daysInactiveBeforeReactivation >= 90
+        )
+        $tx: Transaction(clientId == $clientId, $time: timestamp)
+        Flag(clientId == $clientId, type == FlagType.RIZICNA_LOKACIJA)
         not Flag(clientId == $clientId, type == FlagType.SUMNJIVA_AKTIVACIJA)
     then
         Flag flag = new Flag($clientId, $tx.getTransactionId(),
@@ -137,7 +168,9 @@ rule "L2: Neocekivani priliv od nepoznatog uplatioca"
         System.out.println("[L2] " + flag);
 end
 
-rule "L2: Vise sumnjivih primalaca"
+// Vise sumnjivih primalaca
+
+rule "L2: Vise sumnjivih primalaca - rizican primalac"
     salience 90
     when
         $tx: Transaction(
@@ -145,11 +178,38 @@ rule "L2: Vise sumnjivih primalaca"
             channel == TransactionChannel.TRANSFER,
             $time: timestamp
         )
-        (
-            Flag(clientId == $clientId, type == FlagType.RIZICAN_PRIMALAC)
-            or
-            Flag(clientId == $clientId, type == FlagType.RIZICNA_LOKACIJA)
+        Flag(clientId == $clientId, type == FlagType.RIZICAN_PRIMALAC)
+        Number(intValue >= 3) from accumulate(
+            $t: Transaction(
+                clientId == $clientId,
+                channel == TransactionChannel.TRANSFER,
+                (recipientIsNewlyOpenedAccount == true || recipientIsForeignAccount == true)
+            ) over window:time(48h),
+            count($t)
         )
+        not Flag(
+            clientId == $clientId,
+            type == FlagType.SUMNJIVI_PRIMAOC,
+            $t: timestamp,
+            eval(System.currentTimeMillis() - $t.getTime() < 3600000)
+        )
+    then
+        Flag flag = new Flag($clientId, $tx.getTransactionId(),
+            FlagType.SUMNJIVI_PRIMAOC, $time);
+        flag.setDescription("3+ primalaca su novootvoreni racuni ili inostrani u 48h");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Vise sumnjivih primalaca - rizicna lokacija"
+    salience 90
+    when
+        $tx: Transaction(
+            $clientId: clientId,
+            channel == TransactionChannel.TRANSFER,
+            $time: timestamp
+        )
+        Flag(clientId == $clientId, type == FlagType.RIZICNA_LOKACIJA)
         Number(intValue >= 3) from accumulate(
             $t: Transaction(
                 clientId == $clientId,
@@ -242,7 +302,9 @@ rule "L2: Sumnjiv login pracen dodavanjem novog primaoca"
         System.out.println("[L2] " + flag);
 end
 
-rule "L2: Obrazac pod stresom pred transfer"
+// Obrazac pod stresom pred transfer
+
+rule "L2: Obrazac pod stresom - neuobicajen iznos"
     salience 90
     when
         $tx: Transaction(
@@ -253,13 +315,8 @@ rule "L2: Obrazac pod stresom pred transfer"
         )
         Flag(clientId == $clientId, transactionId == $txId,
              type == FlagType.PRVI_TRANSFER_KA_PRIMAOCU)
-        (
-            Flag(clientId == $clientId, transactionId == $txId,
-                 type == FlagType.NEUOBICAJEN_IZNOS)
-            or
-            Flag(clientId == $clientId, transactionId == $txId,
-                 type == FlagType.ABNORMALNO_VISOKA)
-        )
+        Flag(clientId == $clientId, transactionId == $txId,
+             type == FlagType.NEUOBICAJEN_IZNOS)
         Number(intValue >= 2) from accumulate(
             $b: UserBehavior(
                 clientId == $clientId,
@@ -273,7 +330,38 @@ rule "L2: Obrazac pod stresom pred transfer"
         not Flag(transactionId == $txId, type == FlagType.OBRAZAC_POD_STRESOM)
     then
         Flag flag = new Flag($clientId, $txId, FlagType.OBRAZAC_POD_STRESOM, $time);
-        flag.setDescription("APP scam: prvi primalac + neuobicajen/abnormalan iznos + 2+ stres aktivnosti u 60 min");
+        flag.setDescription("APP scam: prvi primalac + neuobicajen iznos + 2+ stres aktivnosti u 60 min");
+        insert(flag);
+        System.out.println("[L2] " + flag);
+end
+
+rule "L2: Obrazac pod stresom - abnormalno visoka"
+    salience 90
+    when
+        $tx: Transaction(
+            $clientId: clientId,
+            $txId: transactionId,
+            channel == TransactionChannel.TRANSFER,
+            $time: timestamp
+        )
+        Flag(clientId == $clientId, transactionId == $txId,
+             type == FlagType.PRVI_TRANSFER_KA_PRIMAOCU)
+        Flag(clientId == $clientId, transactionId == $txId,
+             type == FlagType.ABNORMALNO_VISOKA)
+        Number(intValue >= 2) from accumulate(
+            $b: UserBehavior(
+                clientId == $clientId,
+                (behaviorType == UserBehavior.BehaviorType.LIMIT_SEARCH
+                 || behaviorType == UserBehavior.BehaviorType.URGENT_TRANSFER_HELP
+                 || behaviorType == UserBehavior.BehaviorType.FAILED_TRANSFER),
+                this before[0s, 60m] $tx
+            ),
+            count($b)
+        )
+        not Flag(transactionId == $txId, type == FlagType.OBRAZAC_POD_STRESOM)
+    then
+        Flag flag = new Flag($clientId, $txId, FlagType.OBRAZAC_POD_STRESOM, $time);
+        flag.setDescription("APP scam: prvi primalac + abnormalan iznos + 2+ stres aktivnosti u 60 min");
         insert(flag);
         System.out.println("[L2] " + flag);
 end

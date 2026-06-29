@@ -33,10 +33,6 @@ public class AlertService {
                 .toList();
     }
 
-    /**
-     * Analiticar POTVRDJUJE prevaru za ovaj konkretan alert.
-     * Alert dobija status "confirmed", klijent OSTAJE na watchlist.
-     */
     public Alert confirmAlert(String transactionId) {
         Alert alert = findAlert(transactionId);
         if (alert == null) return null;
@@ -60,16 +56,10 @@ public class AlertService {
         return alert;
     }
 
-    /**
-     * Analiticar ODBACUJE ovaj konkretan alert (lazni alarm).
-     * Uklanja flagove te transakcije, alert dobija status "dismissed",
-     * i skida klijenta sa watchlist (lazni alarm - ponisti kaznu).
-     */
     public Alert dismissAlert(String transactionId) {
         Alert alert = findAlert(transactionId);
         if (alert == null) return null;
 
-        // 1. Skupi handle-ove flagova te transakcije u zasebnu listu pa brisi
         List<FactHandle> toDelete = new ArrayList<>(
                 kieSession.getFactHandles(
                         o -> o instanceof Flag
@@ -79,14 +69,12 @@ public class AlertService {
             kieSession.delete(fh);
         }
 
-        // 2. Ovaj alert ostaje, dobija status dismissed
         FactHandle handle = kieSession.getFactHandle(alert);
         alert.setStatus("dismissed");
         if (handle != null) {
             kieSession.update(handle, alert);
         }
 
-        // 3. Skini klijenta sa watchlist (lazni alarm - ponisti kaznu)
         Client client = findClient(alert.getClientId());
         if (client != null) {
             FactHandle ch = kieSession.getFactHandle(client);

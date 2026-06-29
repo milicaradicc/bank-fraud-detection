@@ -4,10 +4,7 @@ import com.ftn.sbnz.model.facts.Flag;
 import com.ftn.sbnz.model.events.Transaction;
 import com.ftn.sbnz.model.enums.FlagType;
 
-// ============================================================
 // Hipoteza 1 — Account Takeover
-// ============================================================
-
 query compromisedAccess(String acc)
     Flag(clientId == acc, type == FlagType.BRUTE_FORCE_POKUSAJ)
     or
@@ -21,10 +18,7 @@ query accountTakeover(String acc)
     Flag(clientId == acc, type == FlagType.ABNORMALNO_VISOKA)
 end
 
-// ============================================================
 // Hipoteza 2 — APP Scam
-// ============================================================
-
 query appScam(String acc)
     Flag(clientId == acc, type == FlagType.PRVI_TRANSFER_KA_PRIMAOCU)
     Flag(clientId == acc, type == FlagType.ABNORMALNO_VISOKA)
@@ -32,10 +26,7 @@ query appScam(String acc)
       or Flag(clientId == acc, type == FlagType.OSETLJIV_SEGMENT) )
 end
 
-// ============================================================
 // Hipoteza 3 — Money Mule (rekurzivni graf)
-// ============================================================
-
 query reaches(String from, String to)
     Transaction(clientId == from, recipientId == to, inflow == false)
     or

@@ -20,7 +20,6 @@ public class TransactionRequest {
     private double latitude;
     private double longitude;
 
-    // getteri i setteri
     public String getClientId() { return clientId; }
     public void setClientId(String clientId) { this.clientId = clientId; }
     public double getAmount() { return amount; }

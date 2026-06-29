@@ -21,7 +21,6 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    // Opciono: veza ka Client faktu (samo za CLIENT rolu)
     private String linkedClientId;
 
     @Column

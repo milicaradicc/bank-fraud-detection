@@ -46,7 +46,6 @@ public class StatsService {
                 .filter(a -> a.getRiskLevel() == RiskLevel.CRITICAL)
                 .count());
 
-        // Distribucija po action tipu
         Map<String, Long> byAction = alerts.stream()
                 .collect(Collectors.groupingBy(
                         a -> a.getAction().name(), Collectors.counting()
@@ -64,7 +63,6 @@ public class StatsService {
                         byAction.getOrDefault("AML_REPORT", 0L), "#2d7dd2")
         ));
 
-        // Distribucija po risk nivou
         Map<RiskLevel, Long> byRisk = alerts.stream()
                 .collect(Collectors.groupingBy(Alert::getRiskLevel, Collectors.counting()));
 

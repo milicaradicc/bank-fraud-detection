@@ -54,9 +54,6 @@ public class AccountChange {
     public String getNewValue() { return newValue; }
     public void setNewValue(String newValue) { this.newValue = newValue; }
 
-    /**
-     * Da li je promena povezana sa kontakt podacima (email, phone).
-     */
     public boolean isContactChange() {
         return changeType == ChangeType.EMAIL_CHANGE
                 || changeType == ChangeType.PHONE_CHANGE

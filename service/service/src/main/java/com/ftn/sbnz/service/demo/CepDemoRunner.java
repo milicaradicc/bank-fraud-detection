@@ -5,7 +5,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Component
-@Order(100) // pokreni posle DataInitializer-a
+@Order(100)
 public class CepDemoRunner implements CommandLineRunner {
 
     private final DemoScenariosService scenarios;

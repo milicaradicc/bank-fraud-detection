@@ -22,8 +22,8 @@ public class Client {
 
     private boolean hasPreviousFraudCase;
     private boolean kycFailed;
-    private int daysInactiveBeforeReactivation; // 0 ako nije bio neaktivan
-    private double historicalOutflowInflowRatio; // istorijski odnos (npr. 0.3)
+    private int daysInactiveBeforeReactivation;
+    private double historicalOutflowInflowRatio;
 
     private boolean onWatchlist;
     private int blockedTransactionsLast7Days;

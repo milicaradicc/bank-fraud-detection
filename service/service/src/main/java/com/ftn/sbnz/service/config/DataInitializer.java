@@ -131,11 +131,9 @@ public class DataInitializer implements CommandLineRunner {
         c7.setKnownRecipients(new HashSet<>(Set.of("R-001", "R-002", "R-003")));
         kieSession.insert(c7);
 
-        // ════════════════════════════════════════════════════════════
         //  MONEY MULE LANAC (C-003 -> M-1 -> M-2 -> M-3)
         //  reaches(C-003, M-3) = true; getMuleNetwork(C-003) = [M-1, M-2, M-3]
         //  Iznosi su mali (ispod 5x prosek 400 = 2000) da ne okidaju ABNORMALNO_VISOKA
-        // ════════════════════════════════════════════════════════════
         Date now = new Date();
 
         Transaction mule1 = new Transaction("TX-MULE-1", "C-003", 1800, now, TransactionChannel.TRANSFER);
@@ -163,11 +161,9 @@ public class DataInitializer implements CommandLineRunner {
         transactionService.addToLog(mule3);
         kieSession.insert(mule3);
 
-        // ════════════════════════════════════════════════════════════
         //  ACCOUNT TAKEOVER flagovi za C-004 (Jovan)
         //  query accountTakeover: compromisedAccess (BRUTE_FORCE ili SUSPICIOUS_LOGIN)
         //    + (IZMENA_KONTAKT ili NOVI_PRIMALAC) + ABNORMALNO_VISOKA
-        // ════════════════════════════════════════════════════════════
         kieSession.insert(new Flag("C-004", "TX-ATO-1", FlagType.BRUTE_FORCE_POKUSAJ, now,
                 "5 neuspelih prijava u 3 min sa IP iz inostranstva"));
         kieSession.insert(new Flag("C-004", "TX-ATO-2", FlagType.IZMENA_KONTAKT_PODATAKA, now,
@@ -177,11 +173,9 @@ public class DataInitializer implements CommandLineRunner {
         kieSession.insert(new Flag("C-004", "TX-ATO-4", FlagType.ABNORMALNO_VISOKA, now,
                 "Transfer 4800 EUR - visestruko iznad proseka"));
 
-        // ════════════════════════════════════════════════════════════
         //  APP SCAM flagovi za C-005 (Milena)
         //  query appScam: PRVI_TRANSFER_KA_PRIMAOCU + ABNORMALNO_VISOKA
         //    + (OBRAZAC_POD_STRESOM ili OSETLJIV_SEGMENT)
-        // ════════════════════════════════════════════════════════════
         kieSession.insert(new Flag("C-005", "TX-APP-1", FlagType.PRVI_TRANSFER_KA_PRIMAOCU, now,
                 "Prvi transfer ka ovom primaocu"));
         kieSession.insert(new Flag("C-005", "TX-APP-2", FlagType.ABNORMALNO_VISOKA, now,

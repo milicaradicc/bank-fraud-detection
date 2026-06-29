@@ -20,7 +20,6 @@ public class Transaction {
 
     private TransactionChannel channel;
 
-    // Lokacija
     private String country;
     private String city;
     private String ipAddress;
@@ -29,21 +28,18 @@ public class Transaction {
 
     // Merchant (za POS/online)
     private String merchantId;
-    private String merchantCategory; // MCC kod ili kategorija
+    private String merchantCategory;
     private int mccCode;
 
-    // Uređaj
     private String deviceId;
 
-    // Za transfere
     private String recipientId;
     private boolean recipientIsNew;
     private String recipientCountry;
     private boolean recipientIsForeignAccount;
     private boolean recipientIsNewlyOpenedAccount;
 
-    // Smer toka
-    private boolean inflow; // true = priliv, false = odliv
+    private boolean inflow;
 
     public Transaction() {}
 
@@ -56,7 +52,6 @@ public class Transaction {
         this.channel = channel;
     }
 
-    // Getteri i setteri
     public String getTransactionId() { return transactionId; }
     public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
 

@@ -23,7 +23,6 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("token", token));
     }
 
-    // Samo ADMIN može da registruje nove korisnike — zaštiti ovu rutu u produkciji
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
         Role role = Role.valueOf(body.get("role").toUpperCase());
