@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FraudDataService, Alert } from '../services/fraud-data.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-alerts',
@@ -8,10 +10,15 @@ import { FraudDataService, Alert } from '../services/fraud-data.service';
 })
 export class AlertsComponent implements OnInit {
   alerts: Alert[] = [];
+  private readonly API = environment.apiBaseUrl;
 
-  constructor(private fraudDataService: FraudDataService) {}
+  constructor(private fraudDataService: FraudDataService, private http: HttpClient) {}
 
   ngOnInit() {
+    this.loadAlerts();
+  }
+
+  loadAlerts() {
     this.fraudDataService.getAlerts().subscribe(data => {
       this.alerts = data.map(a => ({
         ...a,
@@ -44,7 +51,28 @@ export class AlertsComponent implements OnInit {
     return map[type] || type;
   }
 
-  confirm(id: string) {}
-  review(id: string) {}
-  dismiss(id: string) {}
+  confirm(id: string) {
+    this.http.post<Alert>(`${this.API}/alerts/${id}/confirm`, {}).subscribe({
+      next: () => {
+        const a = this.alerts.find(x => x.id === id);
+        if (a) a.status = 'confirmed';
+      },
+      error: err => console.error('Greška pri potvrdi:', err)
+    });
+  }
+
+  review(id: string) {
+    const a = this.alerts.find(x => x.id === id);
+    if (a) a.status = 'reviewing';
+  }
+
+  dismiss(id: string) {
+    this.http.post<Alert>(`${this.API}/alerts/${id}/dismiss`, {}).subscribe({
+      next: () => {
+        const a = this.alerts.find(x => x.id === id);
+        if (a) a.status = 'dismissed';
+      },
+      error: err => console.error('Greška pri odbacivanju:', err)
+    });
+  }
 }

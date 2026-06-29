@@ -87,7 +87,6 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initWorkingMemory() {
-        // ── Konfiguracija ───────────────────────────────────────────
         ConfigList config = new ConfigList();
         config.setAmlReportingThreshold(15000.0);
         config.setBlackListedCountries(new HashSet<>(Set.of("KP", "IR", "SY", "CU")));
@@ -95,9 +94,8 @@ public class DataInitializer implements CommandLineRunner {
         config.setHighRiskMccCodes(new HashSet<>(Set.of(7995, 6010, 6011, 4829, 6051, 6050)));
         kieSession.insert(config);
 
-        // ── Klijenti ────────────────────────────────────────────────
 
-        // C-001 Marija - CISTA (za rucni unos na odbrani)
+        // C-001 Marija - CISTA
         Client c1 = new Client("C-001", "Marija Nikolić", 45, ClientSegment.REGULAR,
                 LocalDate.of(2019, 3, 15), "RS", 2500, 300);
         c1.setKnownDevices(new HashSet<>(Set.of("DEV-611B38E2", "DEV-002")));
@@ -129,6 +127,8 @@ public class DataInitializer implements CommandLineRunner {
         // C-007 Ivana - YOUNG (segment template demo)
         Client c7 = new Client("C-007", "Ivana Marković", 22, ClientSegment.YOUNG,
                 LocalDate.of(2024, 1, 10), "RS", 600, 80);
+        c7.setKnownDevices(new HashSet<>(Set.of("DEV-611B38E2", "DEV-011", "DEV-012")));
+        c7.setKnownRecipients(new HashSet<>(Set.of("R-001", "R-002", "R-003")));
         kieSession.insert(c7);
 
         // ════════════════════════════════════════════════════════════
@@ -191,7 +191,6 @@ public class DataInitializer implements CommandLineRunner {
         kieSession.insert(new Flag("C-005", "TX-APP-4", FlagType.OBRAZAC_POD_STRESOM, now,
                 "Vise pretraga limita i citanje uputstva pre transfera"));
 
-        // ── Normalna transakcija za C-002 (da dashboard nije prazan) ─
         Transaction t2 = new Transaction("TX-00420", "C-002", 320, now, TransactionChannel.POS);
         t2.setCurrency("EUR");
         t2.setCountry("RS");

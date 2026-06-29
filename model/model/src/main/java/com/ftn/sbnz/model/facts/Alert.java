@@ -15,6 +15,7 @@ public class Alert {
     private Date timestamp;
     private String message;
     private boolean escalatedToAnalyst;
+    private String status = "new";   // new | reviewing | confirmed | dismissed
 
     public Alert() {}
 
@@ -53,9 +54,12 @@ public class Alert {
     public boolean isEscalatedToAnalyst() { return escalatedToAnalyst; }
     public void setEscalatedToAnalyst(boolean escalatedToAnalyst) { this.escalatedToAnalyst = escalatedToAnalyst; }
 
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
     @Override
     public String toString() {
         return "Alert{client=" + clientId + ", action=" + action +
-                ", level=" + riskLevel + ", score=" + score + "}";
+                ", level=" + riskLevel + ", score=" + score + ", status=" + status + "}";
     }
 }
