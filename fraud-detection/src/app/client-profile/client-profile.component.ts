@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FraudDataService, Client } from '../services/fraud-data.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-client-profile',
@@ -8,8 +10,9 @@ import { FraudDataService, Client } from '../services/fraud-data.service';
 })
 export class ClientProfileComponent implements OnInit {
   clients: Client[] = [];
+  private readonly API = environment.apiBaseUrl;
 
-  constructor(private fraudDataService: FraudDataService) {}
+  constructor(private fraudDataService: FraudDataService, private http: HttpClient) {}
 
   ngOnInit() {
     this.fraudDataService.getClients().subscribe(data => {
@@ -19,6 +22,14 @@ export class ClientProfileComponent implements OnInit {
         avgMonthlyVolume: c.averageMonthlyTurnover,
         flags: []
       }));
+
+      // Za svakog klijenta dohvati prave flagove iz sesije
+      this.clients.forEach(c => {
+        this.http.get<string[]>(`${this.API}/alerts/flags/${c.clientId}`).subscribe({
+          next: flags => { c.flags = flags; },
+          error: () => { c.flags = []; }
+        });
+      });
     });
   }
 }

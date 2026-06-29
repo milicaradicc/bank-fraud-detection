@@ -1,6 +1,6 @@
 <div class="page">
   <div class="page-header">
-    <div><h1>Analitika</h1><p class="text-secondary">CEP statistike i trendovi prevara</p></div>
+    <div><h1>Analitika</h1><p class="text-secondary">Pregled mehanizama rezonovanja</p></div>
   </div>
 
   <div class="grid-3">
@@ -12,7 +12,6 @@
           <div class="level-info">
             <div class="level-name">Atributi transakcije</div>
             <div class="text-muted">Izvedeni atributi, flegovi po transakciji</div>
-            <div class="level-rules mono">8 pravila aktivna</div>
           </div>
         </div>
         <div class="chain-arrow">↓</div>
@@ -21,7 +20,6 @@
           <div class="level-info">
             <div class="level-name">Agregacija (accumulate)</div>
             <div class="text-muted">Obrasce ponašanja u vremenskom prozoru</div>
-            <div class="level-rules mono">6 pravila aktivna</div>
           </div>
         </div>
         <div class="chain-arrow">↓</div>
@@ -30,7 +28,6 @@
           <div class="level-info">
             <div class="level-name">Sinteza skora rizika</div>
             <div class="text-muted">Težine flegova + multiplikatori</div>
-            <div class="level-rules mono">4 pravila aktivna</div>
           </div>
         </div>
         <div class="chain-arrow">↓</div>
@@ -39,14 +36,13 @@
           <div class="level-info">
             <div class="level-name">Akcija i eskalacija</div>
             <div class="text-muted">Blokada, alert, zamrzavanje, AML prijava</div>
-            <div class="level-rules mono">5 pravila aktivna</div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="section-header"><h2>CEP Pravila — Status</h2></div>
+      <div class="section-header"><h2>CEP Pravila</h2></div>
       <div class="cep-rules">
         <div class="cep-rule" *ngFor="let r of cepRules">
           <div class="cep-rule-header">
@@ -54,10 +50,6 @@
             <span class="cep-status active">AKTIVAN</span>
           </div>
           <div class="cep-params text-secondary">{{r.window}} · min {{r.minCount}} događaja</div>
-          <div class="cep-fires">
-            <div class="cep-bar-track"><div class="cep-bar-fill" [style.width.%]="(r.fires/30)*100"></div></div>
-            <span class="mono text-muted">{{r.fires}} okidanja danas</span>
-          </div>
         </div>
       </div>
     </div>

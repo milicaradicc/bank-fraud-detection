@@ -40,4 +40,9 @@ public class AlertController {
         if (alert == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(alert);
     }
+
+    @GetMapping("/flags/{clientId}")
+    public List<String> getClientFlags(@PathVariable String clientId) {
+        return alertService.getClientFlags(clientId);
+    }
 }

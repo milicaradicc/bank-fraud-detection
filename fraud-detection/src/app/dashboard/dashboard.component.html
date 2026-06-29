@@ -4,22 +4,18 @@
       <h1>Dashboard</h1>
       <p class="text-secondary">Pregled sistema u realnom vremenu — {{today}}</p>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-ghost">↻ Osvježi</button>
-      <button class="btn btn-primary">⬇ Izvezi izveštaj</button>
-    </div>
   </div>
 
   <div class="stats-grid" *ngIf="stats">
     <div class="stat-card">
       <span class="stat-icon">↔</span>
-      <div class="stat-label">Transakcije danas</div>
+      <div class="stat-label">Transakcije</div>
       <div class="stat-value">{{stats.totalTransactions | number}}</div>
-      <div class="stat-sub"><span class="stat-up">↑ 12%</span> od juče</div>
+      <div class="stat-sub">U radnoj memoriji</div>
     </div>
     <div class="stat-card danger">
       <span class="stat-icon">⊗</span>
-      <div class="stat-label">Blokirano danas</div>
+      <div class="stat-label">Blokirano</div>
       <div class="stat-value">{{stats.blockedToday}}</div>
       <div class="stat-sub">{{stats.criticalAlerts}} kritičnih slučajeva</div>
     </div>
@@ -28,12 +24,6 @@
       <div class="stat-label">Aktivna upozorenja</div>
       <div class="stat-value">{{stats.activeAlerts}}</div>
       <div class="stat-sub">Čekaju pregled analitičara</div>
-    </div>
-    <div class="stat-card">
-      <span class="stat-icon">✓</span>
-      <div class="stat-label">Preciznost sistema</div>
-      <div class="stat-value">97.4<span class="stat-unit">%</span></div>
-      <div class="stat-sub">Drools rule engine</div>
     </div>
   </div>
 
@@ -73,7 +63,7 @@
     </div>
     <table>
       <thead><tr>
-        <th>Vreme</th><th>ID</th><th>Klijent</th><th>Iznos</th><th>Kanal</th><th>Skor</th><th>Flegovi</th><th>Status</th>
+        <th>Vreme</th><th>ID</th><th>Klijent</th><th>Iznos</th><th>Kanal</th><th>Zemlja</th><th>Primalac</th>
       </tr></thead>
       <tbody>
         <tr *ngFor="let tx of recentTransactions">
@@ -82,17 +72,8 @@
           <td class="client-link">{{tx.clientName}}</td>
           <td class="mono" style="color: var(--text-primary); font-weight:500">{{tx.amount | currency:'EUR':'symbol':'1.0-0'}}</td>
           <td><span class="channel-badge">{{tx.channel}}</span></td>
-          <td>
-            <div class="risk-score-cell">
-              <div class="risk-bar-mini"><div [style.width.%]="tx.riskScore" [class]="'fill-'+tx.riskLevel"></div></div>
-              <span class="risk-badge {{tx.riskLevel}}">{{tx.riskScore}}</span>
-            </div>
-          </td>
-          <td>
-            <span class="flag-chip" *ngFor="let f of (tx.flags || []).slice(0,1)">{{f}}</span>
-            <span class="text-muted mono" *ngIf="tx.flags && tx.flags.length > 1" style="font-size:11px"> +{{tx.flags.length - 1}}</span>
-          </td>
-          <td><span class="status-badge {{tx.status}}">{{tx.status | uppercase}}</span></td>
+          <td class="mono">{{tx.country}}</td>
+          <td class="mono text-muted">{{tx.recipientId || '—'}}</td>
         </tr>
       </tbody>
     </table>

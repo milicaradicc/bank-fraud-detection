@@ -20,11 +20,7 @@ export class DashboardComponent implements OnInit {
         ...tx,
         id: tx.transactionId,
         time: new Date(tx.timestamp).toLocaleTimeString('sr', { hour: '2-digit', minute: '2-digit' }),
-        clientName: tx.clientId,
-        riskScore: tx.riskScore || 0,
-        riskLevel: tx.riskLevel || 'LOW',
-        flags: [],
-        status: 'passed'
+        clientName: tx.clientId
       })).slice(0, 8);
     });
   }

@@ -62,36 +62,43 @@ public class AlertService {
 
     /**
      * Analiticar ODBACUJE ovaj konkretan alert (lazni alarm).
-     * Uklanja SAMO flagove vezane za TU transakciju, taj alert dobija
-     * status "dismissed". Ostali alerti/flagovi klijenta ostaju netaknuti.
+     * Uklanja flagove te transakcije, alert dobija status "dismissed",
+     * i skida klijenta sa watchlist (lazni alarm - ponisti kaznu).
      */
     public Alert dismissAlert(String transactionId) {
         Alert alert = findAlert(transactionId);
         if (alert == null) return null;
 
-        // 1. Skupi handle-ove flagova te transakcije u ZASEBNU listu (da ne menjamo
-        //    kolekciju dok je obilazimo -> izbegava ConcurrentModificationException)
+        // 1. Skupi handle-ove flagova te transakcije u zasebnu listu pa brisi
         List<FactHandle> toDelete = new ArrayList<>(
                 kieSession.getFactHandles(
                         o -> o instanceof Flag
                                 && transactionId.equals(((Flag) o).getTransactionId()))
         );
-
-        // 2. Sada bezbedno brisi
         for (FactHandle fh : toDelete) {
             kieSession.delete(fh);
         }
 
-        // 3. Ovaj alert ostaje, dobija status dismissed
+        // 2. Ovaj alert ostaje, dobija status dismissed
         FactHandle handle = kieSession.getFactHandle(alert);
         alert.setStatus("dismissed");
         if (handle != null) {
             kieSession.update(handle, alert);
         }
 
+        // 3. Skini klijenta sa watchlist (lazni alarm - ponisti kaznu)
+        Client client = findClient(alert.getClientId());
+        if (client != null) {
+            FactHandle ch = kieSession.getFactHandle(client);
+            client.setOnWatchlist(false);
+            if (ch != null) {
+                kieSession.update(ch, client);
+            }
+        }
+
         System.out.println("[ANALITICAR] Odbacen alert " + transactionId
                 + " (lazni alarm) - uklonjeno " + toDelete.size()
-                + " flagova te transakcije.");
+                + " flagova, klijent " + alert.getClientId() + " skinut sa watchlist.");
         return alert;
     }
 
@@ -109,5 +116,14 @@ public class AlertService {
             if (c.getClientId().equals(clientId)) return c;
         }
         return null;
+    }
+
+    public List<String> getClientFlags(String clientId) {
+        return kieSession.getObjects(o -> o instanceof Flag)
+                .stream().map(o -> (Flag) o)
+                .filter(f -> clientId.equals(f.getClientId()))
+                .map(f -> f.getType().name())
+                .distinct()
+                .toList();
     }
 }

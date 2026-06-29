@@ -37,13 +37,22 @@ public class TransactionService {
     }
 
     public List<Transaction> getAllTransactions() {
-        return Collections.unmodifiableList(transactionLog);
+        return kieSession.getObjects(o -> o instanceof Transaction)
+                .stream()
+                .map(o -> (Transaction) o)
+                .sorted(Comparator.comparing(Transaction::getTimestamp,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
     }
 
     public List<Transaction> getTransactionsByClient(String clientId) {
-        return transactionLog.stream()
-                .filter(t -> t.getClientId().equals(clientId))
-                .toList();
+        return kieSession.getObjects(o -> o instanceof Transaction)
+                .stream()
+                .map(o -> (Transaction) o)
+                .filter(t -> clientId.equals(t.getClientId()))
+                .sorted(Comparator.comparing(Transaction::getTimestamp,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
     }
 
     public void addToLog(Transaction tx) {
