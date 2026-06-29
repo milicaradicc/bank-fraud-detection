@@ -1,0 +1,20 @@
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  th, td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border, #e0e0e0);
+  }
+  th { font-size: 12px; color: var(--text-muted, #888); font-weight: 600; }
+  input, select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border, #ccc);
+    border-radius: 4px;
+    font-family: inherit;
+  }
+}
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.msg-success { background: #E8F5E9; border-left: 4px solid #2E7D32; }
+.msg-error { background: #FFEBEE; border-left: 4px solid #C62828; }

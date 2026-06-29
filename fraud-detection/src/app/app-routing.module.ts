@@ -8,6 +8,7 @@ import { AlertsComponent } from './alerts/alerts.component';
 import { AnalyticsComponent } from './analytics/analytics.component';
 import { ClientProfileComponent } from './client-profile/client-profile.component';
 import { DiagnosticComponent } from './diagnostic/diagnostic.component';
+import { AdminComponent } from './admin/admin.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -46,6 +47,12 @@ const routes: Routes = [
     component: DiagnosticComponent,
     canActivate: [AuthGuard],
     data: { roles: ['ADMIN', 'ANALYST'] }
+  },
+  {
+    path: 'admin',
+    component: AdminComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['ADMIN'] }
   },
 ];
 

@@ -1,0 +1,79 @@
+<div class="page">
+  <div class="page-header">
+    <div><h1>Administracija</h1><p class="text-secondary">Izmena parametara template pravila (baza znanja)</p></div>
+  </div>
+
+  <div class="card" *ngIf="message" [class.msg-success]="messageType==='success'" [class.msg-error]="messageType==='error'"
+       style="padding:14px; margin-bottom:16px">
+    {{message}}
+  </div>
+
+  <div class="card" style="margin-bottom:16px; border-left:4px solid #E65100">
+    <p class="text-secondary" style="margin:0">
+      ⚠ Nakon izmene i čuvanja, pokrenite <strong>TemplateGenerator</strong> i restartujte backend
+      da bi se nova pravila generisala i učitala.
+    </p>
+  </div>
+
+  <!-- RISK THRESHOLDS -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="section-header"><h2>Pragovi rizika po segmentu (risk_thresholds)</h2></div>
+    <table class="admin-table">
+      <thead><tr><th>Segment</th><th>alertCut</th><th>blockCut</th><th>freezeCut</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let r of riskRows">
+          <td class="mono">{{r.segment}}</td>
+          <td><input type="number" [(ngModel)]="r.alertCut"></td>
+          <td><input type="number" [(ngModel)]="r.blockCut"></td>
+          <td><input type="number" [(ngModel)]="r.freezeCut"></td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="btn btn-primary" (click)="saveRisk()" style="margin-top:12px">💾 Sačuvaj pragove</button>
+  </div>
+
+  <!-- MCC RISK -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="section-header"><h2>Rizični MCC kodovi (mcc_risk)</h2></div>
+    <table class="admin-table">
+      <thead><tr><th>MCC</th><th>Kategorija</th><th>Težina</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let r of mccRows; let i = index">
+          <td><input type="number" [(ngModel)]="r.mcc"></td>
+          <td><input type="text" [(ngModel)]="r.category"></td>
+          <td><input type="number" [(ngModel)]="r.weight"></td>
+          <td><button class="btn btn-danger btn-sm" (click)="removeMccRow(i)">✕</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:12px; display:flex; gap:10px">
+      <button class="btn btn-ghost" (click)="addMccRow()">+ Dodaj MCC</button>
+      <button class="btn btn-primary" (click)="saveMcc()">💾 Sačuvaj MCC</button>
+    </div>
+  </div>
+
+  <!-- COUNTRY LISTS -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="section-header"><h2>Crna i siva lista zemalja (country_lists)</h2></div>
+    <table class="admin-table">
+      <thead><tr><th>Kod zemlje</th><th>Lista</th><th>Težina</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let r of countryRows; let i = index">
+          <td><input type="text" [(ngModel)]="r.countryCode" maxlength="2" style="text-transform:uppercase"></td>
+          <td>
+            <select [(ngModel)]="r.listType">
+              <option value="crna">crna</option>
+              <option value="siva">siva</option>
+            </select>
+          </td>
+          <td><input type="number" [(ngModel)]="r.weight"></td>
+          <td><button class="btn btn-danger btn-sm" (click)="removeCountryRow(i)">✕</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:12px; display:flex; gap:10px">
+      <button class="btn btn-ghost" (click)="addCountryRow()">+ Dodaj zemlju</button>
+      <button class="btn btn-primary" (click)="saveCountry()">💾 Sačuvaj zemlje</button>
+    </div>
+  </div>
+</div>

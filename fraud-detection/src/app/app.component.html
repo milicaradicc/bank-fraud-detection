@@ -16,7 +16,7 @@
       <span>Sistem aktivan — real-time</span>
     </div>
 
-    <ul class="nav-links">
+<ul class="nav-links">
       <li><a routerLink="/transactions" routerLinkActive="active">
         <span class="nav-icon">↔</span> Transakcije
       </a></li>
@@ -38,6 +38,13 @@
         </a></li>
         <li><a routerLink="/diagnostic" routerLinkActive="active">
           <span class="nav-icon">⌥</span> Dijagnostika
+        </a></li>
+      </ng-container>
+
+      <!-- Samo ADMIN vidi Administraciju -->
+      <ng-container *ngIf="authService.hasRole('ADMIN')">
+        <li><a routerLink="/admin" routerLinkActive="active">
+          <span class="nav-icon">⚙</span> Administracija
         </a></li>
       </ng-container>
     </ul>

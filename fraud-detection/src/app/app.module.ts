@@ -10,6 +10,7 @@ import { AlertsComponent } from './alerts/alerts.component';
 import { AnalyticsComponent } from './analytics/analytics.component';
 import { ClientProfileComponent } from './client-profile/client-profile.component';
 import { DiagnosticComponent } from './diagnostic/diagnostic.component';
+import { AdminComponent } from './admin/admin.component';
 import { FraudDataService } from './services/fraud-data.service';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { JwtInterceptor } from './interceptors/jwt.interceptor';
@@ -23,6 +24,7 @@ import { JwtInterceptor } from './interceptors/jwt.interceptor';
     AnalyticsComponent,
     ClientProfileComponent,
     DiagnosticComponent,
+    AdminComponent,
     LoginComponent
   ],
   imports: [
